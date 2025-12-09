@@ -1,0 +1,2638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <title>System Six</title>
+
+<!-- Standard SEO -->
+<meta name="description" content="A fully functional web-based simulation of the classic System 6 operating system. Features pixel-perfect apps, games like Snake and Pong, and a nostalgic 1-bit grayscale interface.">
+<meta name="keywords" content="System 6, Retro OS, Macintosh Simulator, Classic Mac, 1-bit, Pixel Art, HTML5 Games, Web OS, CSS Desktop, 1980s computer">
+<meta name="author" content="Your Name or Brand">
+<meta name="theme-color" content="#ffffff">
+
+<!-- Open Graph / Facebook / Discord -->
+<!-- These control how the link looks when shared in chats -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://your-website-url.com/">
+<meta property="og:title" content="System 6 Web Simulator">
+<meta property="og:description" content="Experience the nostalgia of 1988 directly in your browser. Play games, paint, and explore a fully interactive classic desktop environment.">
+<meta property="og:image" content="https://your-website-url.com/preview-image.png">
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:url" content="https://your-website-url.com/">
+<meta name="twitter:title" content="System 6 Web Simulator">
+<meta name="twitter:description" content="A retro operating system running entirely in your browser. Includes 20+ apps and games.">
+<meta name="twitter:image" content="https://your-website-url.com/preview-image.png">
+
+<!-- Mobile App / PWA Mode -->
+<!-- These hide the browser UI (URL bar) when 'Added to Home Screen' on iOS/Android -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="System 6">
+<meta name="mobile-web-app-capable" content="yes">
+    
+    <style>
+        /* --- FONT SETUP --- */
+        @font-face {
+            font-family: 'Chicago';
+            src: url('https://fonts.cdnfonts.com/s/14104/ChicagoFLF.woff') format('woff');
+        }
+
+        :root { 
+            --white: #ffffff; 
+            --black: #000000; 
+        }
+        
+        * { box-sizing: border-box; user-select: none; }
+
+        /* GLOBAL GRAYSCALE ENFORCEMENT */
+        html { 
+            filter: grayscale(100%); 
+        }
+
+        body { 
+            font-family: 'Chicago', sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background-color: var(--white); 
+            color: var(--black); 
+            image-rendering: pixelated; 
+            -webkit-font-smoothing: none; 
+            font-smooth: never;
+            overflow: hidden; 
+            height: 100vh; 
+            font-size: 13px;
+            cursor: default;
+        }
+        
+        /* --- UTILS --- */
+        .bold-text {
+            text-shadow: 0.5px 0 0 currentColor, 0 0.5px 0 currentColor;
+            letter-spacing: 0.5px;
+        }
+        
+        /* --- MENU BAR --- */
+        ul[role="menu-bar"] { 
+            margin: 0; padding: 0; 
+            list-style: none; display: flex; 
+            background: var(--white); 
+            border-bottom: 1px solid var(--black); 
+            height: 22px; 
+            align-items: center; 
+            position: relative; z-index: 99999; 
+        }
+        ul[role="menu-bar"] > li[role="menu-item"] { 
+            padding: 0 12px; height: 100%; display: flex; align-items: center; 
+            cursor: default; font-size: 13px; position: relative;
+        }
+        ul[role="menu-bar"] > li[role="menu-item"].active { 
+            background: var(--black); color: var(--white); 
+        }
+
+        /* DROPDOWNS */
+        ul[role="menu"] { 
+            display: none; 
+            position: absolute; top: 22px; left: 0; 
+            background: var(--white); 
+            border: 1px solid var(--black); 
+            box-shadow: 2px 2px 0 var(--black); 
+            min-width: 160px; 
+            list-style: none; padding: 2px 0; 
+            z-index: 100000; 
+        }
+        li[role="menu-item"].active > ul[role="menu"] { display: block; }
+        
+        ul[role="menu"] li[role="menu-item"] { 
+            display: block; padding: 3px 12px; 
+            color: var(--black); text-decoration: none; 
+            font-family: inherit; font-size: 13px; cursor: pointer; 
+            background: white; white-space: nowrap;
+        }
+        ul[role="menu"] li[role="menu-item"]:hover { 
+            background: var(--black); color: var(--white); text-shadow: none; 
+        }
+        .divider { border-top: 1px dotted var(--black); margin: 3px 10px; height: 1px; }
+
+        /* --- WINDOWS --- */
+        .window { 
+            background: var(--white); 
+            border: 1px solid var(--black); 
+            box-shadow: 2px 2px 0 0 var(--black); 
+            display: flex; flex-direction: column; 
+            padding: 1px; 
+        }
+        .title-bar { 
+            height: 20px; 
+            background: repeating-linear-gradient(180deg, var(--white), var(--white) 1px, var(--black) 1px, var(--black) 2px); 
+            display: flex; align-items: center; justify-content: center; 
+            position: relative; padding: 0 4px; 
+            border-bottom: 1px solid var(--black); 
+            cursor: default; 
+        }
+        .title-bar .title { 
+            background: var(--white); color: var(--black); 
+            padding: 0 8px; font-family: inherit; font-size: 13px; 
+            margin: 0; font-weight: normal; z-index: 2; 
+            text-shadow: 0.5px 0 0 currentColor; 
+        }
+        .title-bar .close { 
+            width: 14px; height: 14px; 
+            border: 1px solid var(--black); background: var(--white); 
+            cursor: pointer; position: absolute; left: 6px; z-index: 3; 
+        }
+        .title-bar .close:active { background: black; }
+        
+        .window-pane { 
+            padding: 5px; 
+            background: white; flex-grow: 1; 
+            overflow: hidden; position: relative; 
+            display: flex; flex-direction: column; 
+        }
+        
+        .desktop-window { position: absolute; display: none; z-index: 100; }
+        .desktop-window.visible { display: block; }
+
+        /* --- DESKTOP --- */
+        body { 
+            background-color: #fff;
+            background-image: radial-gradient(#000 15%, transparent 16%), radial-gradient(#000 15%, transparent 16%);
+            background-size: 4px 4px;
+            background-position: 0 0, 2px 2px;
+        }
+        
+        .desktop-icons { position: absolute; top: 30px; right: 10px; display: flex; flex-direction: column; align-items: flex-end; gap: 20px; z-index: 10; }
+        
+        /* Unified Icon Style */
+        .icon-wrapper { 
+            display: flex; flex-direction: column; align-items: center; 
+            width: 80px; height: 60px; 
+            cursor: pointer; background: transparent; border: none; padding: 0; 
+        }
+        .icon-wrapper svg { width: 32px; height: 32px; fill: white; stroke: black; stroke-width: 2px; margin-bottom: 4px; background: white; shape-rendering: crispEdges; }
+        .icon-wrapper span { font-family: inherit; font-size: 12px; background: white; padding: 1px 3px; border: 1px solid white; text-shadow: none; white-space: nowrap; }
+        .icon-wrapper:active span { background: black; color: white; border-color: black; }
+
+        /* --- FOLDER GRID LAYOUT --- */
+        .folder-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, 80px); /* Strict columns */
+            grid-auto-rows: 70px;
+            gap: 10px;
+            padding: 10px;
+            align-content: start;
+            overflow-y: auto;
+        }
+
+        /* --- APP COMPONENTS --- */
+        .btn { 
+            font-family: inherit; font-size: 13px; background: var(--white); 
+            border: 1px solid var(--black); box-shadow: 2px 2px 0 0 var(--black); 
+            color: var(--black); padding: 3px 10px; cursor: pointer; outline: none; border-radius: 0; 
+        }
+        .btn:active { background: var(--black); color: var(--white); transform: translate(1px, 1px); box-shadow: 1px 1px 0 0 var(--black); }
+        
+        input[type="text"], input[type="number"], textarea, select, input[type="range"], input[type="date"] { 
+            border: 1px solid var(--black); padding: 2px 4px; 
+            font-family: inherit; font-size: 13px; background: white; color: black; 
+            outline: none; border-radius: 0;
+        }
+        input[type="checkbox"] { margin-right: 5px; }
+
+        /* MODAL */
+        .modal-overlay { position: fixed; top:0; left:0; right:0; bottom:0; z-index: 99999; display: none; align-items: center; justify-content: center; background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAABZJREFUeNpi/P//PwMTAwMDEAAxAAgwAA4ZAuc7+x6OAAAAAElFTkSuQmCC'); } 
+        .modal-overlay.visible { display: flex; } 
+        .modal-dialog { background: white; border: 2px solid black; box-shadow: 4px 4px 0 black; padding: 15px; width: 280px; text-align: center; }
+
+        /* SPECIFIC APP STYLES */
+        .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: -1px; margin-top: 5px; border: 1px solid black; } 
+        .calc-grid .btn { width: 100%; height: 26px; margin: 0; font-size: 12px; border: 1px solid black; box-shadow: none; }
+        
+        .paint-toolbar { display: flex; gap: 5px; margin-bottom: 5px; border-bottom: 1px dotted black; padding-bottom: 5px; align-items: center; } 
+        .color-swatch { width: 20px; height: 20px; border: 1px solid black; cursor: pointer; } 
+        .color-swatch.active { outline: 2px solid black; outline-offset: 1px; }
+        .tool-btn { border: 1px solid black; width: 20px; height: 20px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size: 10px;}
+        .tool-btn.active { background: black; color: white; }
+        
+        .mine-grid { display: grid; grid-template-columns: repeat(8, 20px); gap: 1px; background: black; border: 2px solid black; width: fit-content; margin: 0 auto; } 
+        .mine-cell { width: 20px; height: 20px; background: white; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; font-family: monospace; font-size: 14px; } 
+        .mine-cell.revealed { background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAABZJREFUeNpi/P//PwMTAwMDEAAxAAgwAA4ZAuc7+x6OAAAAAElFTkSuQmCC'); } 
+        
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; text-align: center; }
+        .cal-cell { padding: 4px; font-size: 12px; }
+        .cal-header { font-weight: bold; border-bottom: 1px solid black; }
+        .cal-today { background: black; color: white; }
+        
+        .ttt-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: -1px; border: 2px solid black; width: 150px; margin: 0 auto; }
+        .ttt-cell { width: 50px; height: 50px; border: 1px solid black; display: flex; align-items: center; justify-content: center; font-size: 32px; cursor: pointer; background: white; }
+
+        /* Piano Keys */
+        .piano-keys { display: flex; height: 100px; position: relative; justify-content: center; width: 192px; margin: 0 auto; }
+        .piano-white { width: 24px; height: 100px; border: 1px solid black; background: white; border-radius: 0 0 2px 2px; cursor: pointer; box-sizing: border-box; }
+        .piano-white:active { background: #ddd; }
+        .piano-black { width: 16px; height: 60px; background: black; position: absolute; z-index: 10; cursor: pointer; }
+        .piano-black:active { background: #333; }
+
+        /* Blackjack */
+        .card { width: 40px; height: 60px; border: 2px solid black; background: white; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; margin-right: 5px; font-weight: bold; font-size: 14px; position: relative; }
+        .card.suit-red { color: black; } 
+
+        /* Slots */
+        .slots-row { display: flex; justify-content: center; gap: 5px; margin: 10px 0; }
+        .slots-reel { width: 50px; height: 60px; border: 2px solid black; display: flex; align-items: center; justify-content: center; font-size: 32px; background: white; }
+
+        /* Drummer */
+        .drum-pad { width: 60px; height: 60px; border: 2px solid black; background: white; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; box-shadow: 2px 2px 0 black; margin: 5px; }
+        .drum-pad:active { background: black; color: white; transform: translate(2px, 2px); box-shadow: none; }
+
+        /* Simon */
+        .simon-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; width: 200px; margin: 0 auto; }
+        .simon-btn { height: 80px; border: 2px solid black; cursor: pointer; }
+        .simon-btn.active { background: black !important; border-color: white; }
+
+        /* Mole */
+        .mole-grid { display: grid; grid-template-columns: repeat(3, 40px); gap: 5px; justify-content: center; }
+        .mole-hole { width: 40px; height: 40px; border: 1px solid black; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .mole-hole.active::after { content: '🐹'; font-size: 24px; }
+        
+        /* Hangman */
+        .hangman-letters { display: flex; flex-wrap: wrap; gap: 2px; justify-content: center; margin-top: 5px; }
+        .letter-btn { width: 20px; height: 20px; border: 1px solid black; background: white; cursor: pointer; font-size: 12px; }
+        .letter-btn.used { visibility: hidden; }
+
+        /* ASCII */
+        .ascii-row { display: flex; border-bottom: 1px dotted black; padding: 2px 0; font-family: monospace; }
+        .ascii-row span { flex: 1; text-align: center; }
+        
+        /* Magic 8 Ball */
+        .ball-circle { width: 100px; height: 100px; border-radius: 50%; background: black; margin: 0 auto; display: flex; align-items: center; justify-content: center; color: white; text-align: center; padding: 10px; border: 2px solid black; font-size: 11px; }
+        .ball-window { width: 50px; height: 50px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: black; border: 4px double black; }
+        
+        /* Coin Flip */
+        .coin { width: 80px; height: 80px; border-radius: 50%; border: 4px solid black; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; }
+        
+        /* Memory / Pairs */
+        .memory-grid { display: grid; grid-template-columns: repeat(4, 40px); gap: 4px; margin: 0 auto; width: fit-content; } 
+        .memory-card { width: 40px; height: 40px; background: black; color: black; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; 
+            background-image: repeating-linear-gradient(45deg, #fff 0, #fff 2px, #000 0, #000 4px);
+        } 
+        .memory-card.flipped { background: white; color: black; border: 2px solid black; background-image: none; } 
+        .memory-card.matched { visibility: hidden; }
+
+        /* Video Poker */
+        .poker-hand { display: flex; justify-content: center; gap: 4px; margin-bottom: 10px; }
+        
+        /* Pattern Maker */
+        .pat-grid { display: grid; grid-template-columns: repeat(8, 20px); gap: 1px; background: #aaa; border: 2px solid black; width: fit-content; margin: 0 auto; }
+        .pat-cell { width: 20px; height: 20px; background: white; cursor: pointer; }
+        .pat-cell.filled { background: black; }
+        
+        /* Connect Four */
+        .c4-grid { display: grid; grid-template-columns: repeat(7, 30px); gap: 2px; background: black; border: 2px solid black; width: fit-content; margin: 0 auto; padding: 2px; }
+        .c4-cell { width: 30px; height: 30px; background: white; border-radius: 50%; cursor: pointer; }
+        .c4-cell.p1 { background: black; } /* Grayscale enforced */
+        .c4-cell.p2 { background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAABZJREFUeNpi/P//PwMTAwMDEAAxAAgwAA4ZAuc7+x6OAAAAAElFTkSuQmCC'); } /* Checkered for P2 */
+    </style>
+</head>
+<body>
+
+    <!-- MENU BAR -->
+    <ul role="menu-bar" class="bold-text" id="menu-bar">
+        <li role="menu-item" class="top-menu-item"><span style="font-size: 16px;"></span>
+            <ul role="menu">
+                <li role="menu-item" onclick="openModal('about')">About System 6...</li>
+                <li class="divider"></li>
+                <li role="menu-item" onclick="openWindow('ascii')">ASCII</li>
+                <li role="menu-item" onclick="openWindow('calculator')">Calculator</li>
+                <li role="menu-item" onclick="openWindow('calendar')">Calendar</li>
+                <li role="menu-item" onclick="openWindow('checklist')">Checklist</li>
+                <li role="menu-item" onclick="openWindow('chooser')">Chooser</li>
+                <li role="menu-item" onclick="openWindow('control')">Control Panel</li>
+                <li role="menu-item" onclick="openWindow('converter')">Converter</li>
+                <li role="menu-item" onclick="openWindow('dayfinder')">Day Finder</li>
+                <li role="menu-item" onclick="openWindow('dice')">Dice</li>
+                <li role="menu-item" onclick="openWindow('drummer')">Drummer</li>
+                <li role="menu-item" onclick="openWindow('expenses')">Expenses</li>
+                <li role="menu-item" onclick="openWindow('bmicalc')">BMI Calc</li>
+                <li role="menu-item" onclick="openWindow('jokes')">Jokes</li>
+                <li role="menu-item" onclick="openWindow('keycaps')">Key Caps</li>
+                <li role="menu-item" onclick="openWindow('loans')">Loans</li>
+                <li role="menu-item" onclick="openWindow('magic8ball')">Magic 8-Ball</li>
+                <li role="menu-item" onclick="openWindow('metronome')">Metronome</li>
+                <li role="menu-item" onclick="openWindow('morse')">Morse</li>
+                <li role="menu-item" onclick="openWindow('notepad')">Note Pad</li>
+                <li role="menu-item" onclick="openWindow('passgen')">Pass Gen</li>
+                <li role="menu-item" onclick="openWindow('pattern')">Pattern Maker</li>
+                <li role="menu-item" onclick="openWindow('piano')">Piano</li>
+                <li role="menu-item" onclick="openWindow('puzzle')">Puzzle</li>
+                <li role="menu-item" onclick="openWindow('quotes')">Quotes</li>
+                <li role="menu-item" onclick="openWindow('scrapbook')">Scrapbook</li>
+                <li role="menu-item" onclick="openWindow('speak')">Speak</li>
+                <li role="menu-item" onclick="openWindow('stopwatch')">Stopwatch</li>
+                <li role="menu-item" onclick="openWindow('timer')">Timer</li>
+                <li role="menu-item" onclick="openWindow('tipcalc')">Tip Calc</li>
+                <li role="menu-item" onclick="openWindow('typer')">Typer</li>
+                <li role="menu-item" onclick="openWindow('worldclock')">World Clock</li>
+            </ul>
+        </li>
+        <li role="menu-item" class="top-menu-item">File
+            <ul role="menu">
+                <li role="menu-item" onclick="openWindow('hd')">Open Macintosh HD</li>
+                <li class="divider"></li>
+                <li role="menu-item" onclick="closeActive()">Close</li>
+            </ul>
+        </li>
+        <li role="menu-item" class="top-menu-item">Edit
+            <ul role="menu">
+                <li role="menu-item" onclick="document.execCommand('undo')">Undo</li>
+                <li class="divider"></li>
+                <li role="menu-item" onclick="document.execCommand('cut')">Cut</li>
+                <li role="menu-item" onclick="document.execCommand('copy')">Copy</li>
+                <li role="menu-item" onclick="document.execCommand('paste')">Paste</li>
+                <li role="menu-item" onclick="openWindow('resedit')">ResEdit</li>
+            </ul>
+        </li>
+        <li role="menu-item" class="top-menu-item">Special
+            <ul role="menu">
+                <li role="menu-item" onclick="alert('It is now safe to turn off your computer.')">Shut Down</li>
+            </ul>
+        </li>
+        <li style="margin-left: auto; padding-right: 15px; font-size: 13px; cursor: default;"><span id="clock">12:00 PM</span></li>
+    </ul>
+
+    <!-- DESKTOP ICONS -->
+    <div class="desktop-icons">
+        <div class="icon-wrapper" ondblclick="openWindow('hd')"><svg viewBox="0 0 32 32"><path d="M4,4 h24 v24 h-24 z" fill="white" stroke="black" stroke-width="2"/><rect x="6" y="22" width="20" height="2" fill="black"/><rect x="8" y="8" width="2" height="2" fill="black"/><path d="M12,12 h12" stroke="black" stroke-width="2"/></svg><span>Macintosh HD</span></div>
+        <div class="icon-wrapper" ondblclick="openWindow('apps')"><svg viewBox="0 0 32 32"><path d="M2,10 L16,4 L30,10 L30,28 L2,28 Z" fill="white" stroke="black" stroke-width="2"/><path d="M8,14 h16" stroke="black" stroke-width="2"/><path d="M8,20 h16" stroke="black" stroke-width="2"/></svg><span>Applications</span></div>
+        <div class="icon-wrapper" ondblclick="openWindow('games')"><svg viewBox="0 0 32 32"><rect x="4" y="4" width="24" height="24" fill="white" stroke="black" stroke-width="2"/><circle cx="12" cy="12" r="2" fill="black"/><circle cx="20" cy="12" r="2" fill="black"/><circle cx="12" cy="20" r="2" fill="black"/><circle cx="20" cy="20" r="2" fill="black"/></svg><span>Games</span></div>
+        <div class="icon-wrapper" ondblclick="openWindow('trash')"><svg viewBox="0 0 32 32"><path d="M6,6 h20 v24 h-20 z" fill="white" stroke="black" stroke-width="2"/><line x1="10" y1="6" x2="10" y2="30" stroke="black" stroke-width="2"/><line x1="16" y1="6" x2="16" y2="30" stroke="black" stroke-width="2"/><line x1="22" y1="6" x2="22" y2="30" stroke="black" stroke-width="2"/><rect x="4" y="4" width="24" height="2" fill="black"/><rect x="12" y="2" width="8" height="2" fill="black"/></svg><span>Trash</span></div>
+    </div>
+
+    <!-- ===== APPS ===== -->
+
+    <!-- CALCULATOR -->
+    <div id="calculator" class="window desktop-window" style="top:50px; left:50px; width:160px;">
+        <div class="title-bar" onmousedown="startDrag(event,'calculator')"><div class="close" onclick="closeWindow('calculator')"></div><h1 class="title">Calculator</h1></div>
+        <div class="window-pane">
+            <input type="text" id="calc-display" value="0" style="width:100%; text-align:right; margin-bottom:5px; font-size:16px; border:1px solid black;" readonly>
+            <div class="calc-grid">
+                <button class="btn" onclick="calc('C')">C</button><button class="btn" onclick="calc('=')">=</button><button class="btn" onclick="calc('/')">/</button><button class="btn" onclick="calc('*')">*</button>
+                <button class="btn" onclick="calc('7')">7</button><button class="btn" onclick="calc('8')">8</button><button class="btn" onclick="calc('9')">9</button><button class="btn" onclick="calc('-')">-</button>
+                <button class="btn" onclick="calc('4')">4</button><button class="btn" onclick="calc('5')">5</button><button class="btn" onclick="calc('6')">6</button><button class="btn" onclick="calc('+')">+</button>
+                <button class="btn" onclick="calc('1')">1</button><button class="btn" onclick="calc('2')">2</button><button class="btn" onclick="calc('3')">3</button><button class="btn" onclick="calc('0')" style="grid-column:span 2;">0</button><button class="btn" onclick="calc('.')">.</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- PATTERN MAKER (NEW) -->
+    <div id="pattern" class="window desktop-window" style="top:100px; left:300px; width:220px;">
+        <div class="title-bar" onmousedown="startDrag(event,'pattern')"><div class="close" onclick="closeWindow('pattern')"></div><h1 class="title">Pattern</h1></div>
+        <div class="window-pane" style="display:flex; flex-direction:column; align-items:center;">
+            <div id="pat-grid" class="pat-grid"></div>
+            <button class="btn" style="margin-top:10px;" onclick="applyPattern()">Set Desktop</button>
+        </div>
+    </div>
+    
+    <!-- PASS GEN (NEW) -->
+    <div id="passgen" class="window desktop-window" style="top:120px; left:350px; width:220px;">
+        <div class="title-bar" onmousedown="startDrag(event,'passgen')"><div class="close" onclick="closeWindow('passgen')"></div><h1 class="title">Pass Gen</h1></div>
+        <div class="window-pane">
+            <label>Length: <span id="pg-len-val">12</span></label>
+            <input type="range" id="pg-len" min="6" max="24" value="12" oninput="document.getElementById('pg-len-val').innerText=this.value">
+            <div><input type="checkbox" id="pg-sym" checked> Symbols</div>
+            <div><input type="checkbox" id="pg-num" checked> Numbers</div>
+            <button class="btn" style="width:100%; margin:5px 0;" onclick="genPass()">Generate</button>
+            <input type="text" id="pg-out" style="width:100%; font-family:monospace;" readonly>
+        </div>
+    </div>
+    
+    <!-- JOKES (NEW) -->
+    <div id="jokes" class="window desktop-window" style="top:180px; left:200px; width:250px;">
+        <div class="title-bar" onmousedown="startDrag(event,'jokes')"><div class="close" onclick="closeWindow('jokes')"></div><h1 class="title">Jokes</h1></div>
+        <div class="window-pane">
+            <p id="joke-text" style="min-height:60px;">Click below for a laugh.</p>
+            <button class="btn" style="width:100%;" onclick="tellJoke()">Tell Me Another</button>
+        </div>
+    </div>
+
+    <!-- WORLD CLOCK -->
+    <div id="worldclock" class="window desktop-window" style="top:80px; left:250px; width:220px;">
+        <div class="title-bar" onmousedown="startDrag(event,'worldclock')"><div class="close" onclick="closeWindow('worldclock')"></div><h1 class="title">World Clock</h1></div>
+        <div class="window-pane">
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>New York</span><span id="wc-ny">00:00</span></div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>London</span><span id="wc-ldn">00:00</span></div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>Tokyo</span><span id="wc-tky">00:00</span></div>
+            <div style="display:flex; justify-content:space-between;"><span>Sydney</span><span id="wc-syd">00:00</span></div>
+        </div>
+    </div>
+
+    <!-- CONVERTER -->
+    <div id="converter" class="window desktop-window" style="top:100px; left:250px; width:220px;">
+        <div class="title-bar" onmousedown="startDrag(event, 'converter')"><div class="close" onclick="closeWindow('converter')"></div><h1 class="title">Converter</h1></div>
+        <div class="window-pane">
+            <label>Convert:</label>
+            <select id="conv-type" onchange="runConvert()" style="width:100%; margin-bottom:5px;">
+                <option value="km-mi">Kilometers to Miles</option>
+                <option value="mi-km">Miles to Kilometers</option>
+                <option value="kg-lb">Kilograms to Pounds</option>
+                <option value="lb-kg">Pounds to Kilograms</option>
+                <option value="c-f">Celsius to Fahrenheit</option>
+                <option value="f-c">Fahrenheit to Celsius</option>
+            </select>
+            <input type="number" id="conv-input" style="width:100%; margin-bottom:5px;" value="1" oninput="runConvert()">
+            <div style="text-align:center; font-size:20px; padding:5px;">=</div>
+            <input type="text" id="conv-output" style="width:100%; background:#eee;" readonly>
+        </div>
+    </div>
+
+    <!-- SPEAK -->
+    <div id="speak" class="window desktop-window" style="top:220px; left:100px; width:240px;">
+        <div class="title-bar" onmousedown="startDrag(event, 'speak')"><div class="close" onclick="closeWindow('speak')"></div><h1 class="title">Speak</h1></div>
+        <div class="window-pane">
+            <textarea id="speak-text" style="width:100%; height:100px; margin-bottom:5px; resize:none;">Hello World</textarea>
+            <button class="btn" style="width:100%" onclick="speakText()">Say It</button>
+        </div>
+    </div>
+
+    <!-- EXPENSES -->
+    <div id="expenses" class="window desktop-window" style="top:150px; left:300px; width:250px;">
+        <div class="title-bar" onmousedown="startDrag(event, 'expenses')"><div class="close" onclick="closeWindow('expenses')"></div><h1 class="title">Expenses</h1></div>
+        <div class="window-pane">
+            <div style="display:flex; gap:2px; margin-bottom:5px;">
+                <input type="text" id="exp-item" style="flex:2;" placeholder="Item">
+                <input type="number" id="exp-cost" style="flex:1;" placeholder="$">
+                <button class="btn" onclick="addExpense()">+</button>
+            </div>
+            <div id="exp-list" style="border:1px solid black; height:120px; overflow-y:auto; padding:2px; margin-bottom:5px; font-family:monospace;"></div>
+            <div style="text-align:right; font-weight:bold;">Total: $<span id="exp-total">0.00</span></div>
+        </div>
+    </div>
+
+    <!-- BMI CALC -->
+    <div id="bmicalc" class="window desktop-window" style="top:180px; left:350px; width:200px;">
+        <div class="title-bar" onmousedown="startDrag(event, 'bmicalc')"><div class="close" onclick="closeWindow('bmicalc')"></div><h1 class="title">BMI Calc</h1></div>
+        <div class="window-pane">
+            <label>Height (cm):</label><input type="number" id="bmi-h" style="width:100%; margin-bottom:5px;">
+            <label>Weight (kg):</label><input type="number" id="bmi-w" style="width:100%; margin-bottom:5px;">
+            <button class="btn" style="width:100%; margin-bottom:5px;" onclick="calcBMI()">Calculate</button>
+            <div style="text-align:center; font-weight:bold;">BMI: <span id="bmi-out">--</span></div>
+        </div>
+    </div>
+
+    <!-- TIP CALC -->
+    <div id="tipcalc" class="window desktop-window" style="top:180px; left:400px; width:220px;">
+        <div class="title-bar" onmousedown="startDrag(event, 'tipcalc')"><div class="close" onclick="closeWindow('tipcalc')"></div><h1 class="title">Tip Calc</h1></div>
+        <div class="window-pane">
+            <label>Bill:</label><input type="number" id="tip-bill" value="50" style="width:100%; margin-bottom:5px;">
+            <label>Split:</label><input type="number" id="tip-split" value="1" style="width:100%; margin-bottom:5px;">
+            <div style="display:flex; gap:5px; margin-bottom:10px;">
+                <button class="btn" style="flex:1" onclick="calcTip(0.10)">10%</button>
+                <button class="btn" style="flex:1" onclick="calcTip(0.15)">15%</button>
+                <button class="btn" style="flex:1" onclick="calcTip(0.20)">20%</button>
+            </div>
+            <div style="border-top:1px solid black; padding-top:5px; font-weight:bold;">Per Person: <span id="tip-out">$0.00</span></div>
+        </div>
+    </div>
+
+    <!-- DICE -->
+    <div id="dice" class="window desktop-window" style="top:250px; left:250px; width:150px;">
+        <div class="title-bar" onmousedown="startDrag(event, 'dice')"><div class="close" onclick="closeWindow('dice')"></div><h1 class="title">Dice</h1></div>
+        <div class="window-pane" style="text-align:center;">
+            <div id="dice-out" style="font-size:64px; height:80px;">⚀</div>
+            <button class="btn" style="width:100%" onclick="rollDice()">Roll</button>
+        </div>
+    </div>
+
+    <!-- LOANS -->
+    <div id="loans" class="window desktop-window" style="top:150px; left:250px; width:240px;">
+        <div class="title-bar" onmousedown="startDrag(event, 'loans')"><div class="close" onclick="closeWindow('loans')"></div><h1 class="title">Loans</h1></div>
+        <div class="window-pane">
+            <label>Amount ($):</label>
+            <input type="number" id="loan-amt" value="10000" style="width:100%; margin-bottom:5px;">
+            <label>Rate (%):</label>
+            <input type="number" id="loan-rate" value="5" style="width:100%; margin-bottom:5px;">
+            <label>Months:</label>
+            <input type="number" id="loan-term" value="60" style="width:100%; margin-bottom:10px;">
+            <button class="btn" style="width:100%; margin-bottom:10px;" onclick="calcLoan()">Calculate Payment</button>
+            <div style="border-top:1px solid black; padding-top:5px; font-weight:bold;">
+                Monthly: <span id="loan-out">$0.00</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- PIANO -->
+    <div id="piano" class="window desktop-window" style="top:180px; left:200px; width:300px;">
+        <div class="title-bar" onmousedown="startDrag(event,'piano')"><div class="close" onclick="closeWindow('piano')"></div><h1 class="title">Piano</h1></div>
+        <div class="window-pane">
+            <div class="piano-keys">
+                <div class="piano-white" onclick="playTone(261.6, 0.3)"></div>
+                <div class="piano-black" style="left:16px;" onclick="playTone(277.2, 0.3)"></div>
+                <div class="piano-white" onclick="playTone(293.7, 0.3)"></div>
+                <div class="piano-black" style="left:40px;" onclick="playTone(311.1, 0.3)"></div>
+                <div class="piano-white" onclick="playTone(329.6, 0.3)"></div>
+                <div class="piano-white" onclick="playTone(349.2, 0.3)"></div>
+                <div class="piano-black" style="left:88px;" onclick="playTone(370.0, 0.3)"></div>
+                <div class="piano-white" onclick="playTone(392.0, 0.3)"></div>
+                <div class="piano-black" style="left:112px;" onclick="playTone(415.3, 0.3)"></div>
+                <div class="piano-white" onclick="playTone(440.0, 0.3)"></div>
+                <div class="piano-black" style="left:136px;" onclick="playTone(466.2, 0.3)"></div>
+                <div class="piano-white" onclick="playTone(493.9, 0.3)"></div>
+                <div class="piano-white" onclick="playTone(523.2, 0.3)"></div>
+            </div>
+            <p style="text-align:center; font-size:10px; margin-top:5px;">Click to Play</p>
+        </div>
+    </div>
+
+    <!-- DRUMMER -->
+    <div id="drummer" class="window desktop-window" style="top:250px; left:250px; width:300px;">
+        <div class="title-bar" onmousedown="startDrag(event,'drummer')"><div class="close" onclick="closeWindow('drummer')"></div><h1 class="title">Drummer</h1></div>
+        <div class="window-pane" style="background:#eee;">
+            <div style="display:flex; justify-content:center; flex-wrap:wrap;">
+                <div class="drum-pad" onclick="playDrum('kick')">KICK</div>
+                <div class="drum-pad" onclick="playDrum('snare')">SNARE</div>
+                <div class="drum-pad" onclick="playDrum('hat')">HAT</div>
+                <div class="drum-pad" onclick="playDrum('tom')">TOM</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TIMER -->
+    <div id="timer" class="window desktop-window" style="top:200px; left:400px; width:200px;">
+        <div class="title-bar" onmousedown="startDrag(event,'timer')"><div class="close" onclick="closeWindow('timer')"></div><h1 class="title">Timer</h1></div>
+        <div class="window-pane" style="text-align:center;">
+            <div id="timer-display" style="font-size:24px; font-family:monospace; margin-bottom:5px;">00:00</div>
+            <div style="display:flex; justify-content:center; gap:5px; margin-bottom:10px;">
+                <input type="number" id="timer-min" placeholder="M" style="width:40px;">
+                <input type="number" id="timer-sec" placeholder="S" style="width:40px;">
+            </div>
+            <button class="btn" style="width:100%" onclick="runTimer()">Start Timer</button>
+            <div id="timer-bar" style="height:5px; background:black; width:0%; margin-top:5px; transition: width 1s linear;"></div>
+        </div>
+    </div>
+
+    <!-- CALENDAR -->
+    <div id="calendar" class="window desktop-window" style="top:100px; left:500px; width:220px;">
+        <div class="title-bar" onmousedown="startDrag(event,'calendar')"><div class="close" onclick="closeWindow('calendar')"></div><h1 class="title">Calendar</h1></div>
+        <div class="window-pane">
+            <h2 style="text-align:center; margin:0 0 10px 0;" id="cal-title">Month Year</h2>
+            <div class="cal-grid" id="cal-grid"></div>
+        </div>
+    </div>
+
+    <!-- CHECKLIST -->
+    <div id="checklist" class="window desktop-window" style="top:120px; left:350px; width:220px;">
+        <div class="title-bar" onmousedown="startDrag(event, 'checklist')"><div class="close" onclick="closeWindow('checklist')"></div><h1 class="title">Checklist</h1></div>
+        <div class="window-pane">
+            <div style="display:flex; gap:2px; margin-bottom:5px;">
+                <input type="text" id="cl-input" style="flex-grow:1;" placeholder="New Task">
+                <button class="btn" onclick="addChecklistItem()">Add</button>
+            </div>
+            <div id="cl-list" style="border:1px solid black; height:150px; overflow-y:auto; padding:2px; background:white;">
+            </div>
+        </div>
+    </div>
+
+    <!-- STOPWATCH -->
+    <div id="stopwatch" class="window desktop-window" style="top:150px; left:500px; width:180px;">
+        <div class="title-bar" onmousedown="startDrag(event,'stopwatch')"><div class="close" onclick="closeWindow('stopwatch')"></div><h1 class="title">Stopwatch</h1></div>
+        <div class="window-pane">
+            <div id="stopwatch-display" style="font-family:monospace; font-size:24px; text-align:center; margin-bottom:10px;">00:00:00</div>
+            <button class="btn" style="width:100%" onclick="startWatch()">Start</button>
+        </div>
+    </div>
+
+    <!-- NOTEPAD -->
+    <div id="notepad" class="window desktop-window" style="top:100px; left:100px; width:250px;">
+        <div class="title-bar" onmousedown="startDrag(event,'notepad')"><div class="close" onclick="closeWindow('notepad')"></div><h1 class="title">Note Pad</h1></div>
+        <div class="window-pane">
+            <textarea id="notepad-area" style="width:100%; height:150px; resize:none; border:none; outline:none;" placeholder="Type here..."></textarea>
+            <div style="border-top:1px solid black; text-align:center; padding:2px; font-size:10px;">1</div>
+        </div>
+    </div>
+
+    <!-- CONTROL PANEL -->
+    <div id="control" class="window desktop-window" style="top:120px; left:50px; width:280px;">
+        <div class="title-bar" onmousedown="startDrag(event,'control')"><div class="close" onclick="closeWindow('control')"></div><h1 class="title">General</h1></div>
+        <div class="window-pane">
+            <label>Desktop Pattern:</label>
+            <div style="display:flex; gap:10px; margin-top:5px;">
+                <div onclick="setPattern('dither')" style="width:30px; height:30px; border:1px solid black; cursor:pointer; background-image: radial-gradient(#000 15%, transparent 16%); background-size:4px 4px;"></div>
+                <div onclick="setPattern('check')" style="width:30px; height:30px; border:1px solid black; cursor:pointer; background-image: repeating-linear-gradient(45deg, #000 0, #000 2px, #fff 0, #fff 4px);"></div>
+                <div onclick="setPattern('white')" style="width:30px; height:30px; border:1px solid black; cursor:pointer; background:white;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAINT -->
+    <div id="paint" class="window desktop-window" style="top:150px; left:200px; width:320px;">
+        <div class="title-bar" onmousedown="startDrag(event,'paint')"><div class="close" onclick="closeWindow('paint')"></div><h1 class="title">Paint</h1></div>
+        <div class="window-pane">
+            <div class="paint-toolbar">
+                <div id="tool-pencil" class="tool-btn active" onclick="setTool('pencil')">✏️</div>
+                <div id="tool-fill" class="tool-btn" onclick="setTool('fill')">🪣</div>
+                <div style="width:10px;"></div>
+                <div class="color-swatch active" style="background:black" onclick="setPaintColor('black')"></div>
+                <div class="color-swatch" style="background:white" onclick="setPaintColor('white')"></div>
+                <div class="color-swatch" style="background:repeating-linear-gradient(45deg, #000 0, #000 2px, #fff 0, #fff 4px)" onclick="setPaintColor('pattern')"></div>
+                <button class="btn" onclick="clearCanvas()" style="margin-left:auto;">Clear</button>
+            </div>
+            <canvas id="paintCanvas" width="300" height="200" style="border:1px solid black; cursor:crosshair; display:block; margin:0 auto;"></canvas>
+        </div>
+    </div>
+
+    <!-- APPLICATIONS FOLDER (GRID) -->
+    <div id="apps" class="window desktop-window" style="top:100px; left:100px; width:450px;">
+        <div class="title-bar" onmousedown="startDrag(event, 'apps')"><div class="close" onclick="closeWindow('apps')"></div><h1 class="title">Applications</h1></div>
+        <div class="window-pane folder-grid">
+            <div class="icon-wrapper" onclick="openWindow('calculator')"><svg viewBox="0 0 32 32"><rect x="8" y="4" width="16" height="24" fill="white" stroke="black" stroke-width="2"/><rect x="10" y="6" width="12" height="6" fill="black"/><rect x="10" y="14" width="3" height="3" fill="black"/><rect x="14" y="14" width="3" height="3" fill="black"/><rect x="18" y="14" width="3" height="3" fill="black"/></svg><span>Calc</span></div>
+            <div class="icon-wrapper" onclick="openWindow('notepad')"><svg viewBox="0 0 32 32"><path d="M6,4 h16 l4,4 v20 h-20 z" fill="white" stroke="black" stroke-width="2"/><path d="M22,4 v4 h4" stroke="black" stroke-width="2"/></svg><span>Note Pad</span></div>
+            <div class="icon-wrapper" onclick="openWindow('paint')"><svg viewBox="0 0 32 32"><path d="M8,24 L4,28 L8,32 L12,28 Z" fill="black"/><rect x="10" y="4" width="6" height="20" transform="rotate(-45 13 14)" fill="white" stroke="black" stroke-width="2"/></svg><span>Paint</span></div>
+            <div class="icon-wrapper" onclick="openWindow('converter')"><svg viewBox="0 0 32 32"><rect x="4" y="10" width="24" height="12" fill="white" stroke="black" stroke-width="2"/><line x1="8" y1="10" x2="8" y2="14" stroke="black"/><line x1="12" y1="10" x2="12" y2="13" stroke="black"/><line x1="16" y1="10" x2="16" y2="14" stroke="black"/><line x1="20" y1="10" x2="20" y2="13" stroke="black"/><line x1="24" y1="10" x2="24" y2="14" stroke="black"/></svg><span>Converter</span></div>
+            <div class="icon-wrapper" onclick="openWindow('checklist')"><svg viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" fill="white" stroke="black" stroke-width="2"/><line x1="10" y1="8" x2="22" y2="8" stroke="black"/><line x1="10" y1="12" x2="22" y2="12" stroke="black"/><rect x="8" y="8" width="2" height="2" fill="black"/><rect x="8" y="12" width="2" height="2" fill="black"/></svg><span>Checklist</span></div>
+            <div class="icon-wrapper" onclick="openWindow('expenses')"><svg viewBox="0 0 32 32"><rect x="4" y="4" width="24" height="24" fill="white" stroke="black"/><line x1="16" y1="4" x2="16" y2="28" stroke="black"/><line x1="4" y1="12" x2="28" y2="12" stroke="black"/></svg><span>Expenses</span></div>
+            <div class="icon-wrapper" onclick="openWindow('bmicalc')"><svg viewBox="0 0 32 32"><rect x="8" y="4" width="16" height="24" fill="white" stroke="black"/><rect x="12" y="8" width="8" height="8" fill="black"/><rect x="12" y="18" width="8" height="6" fill="black"/></svg><span>BMI Calc</span></div>
+            <div class="icon-wrapper" onclick="openWindow('loans')"><svg viewBox="0 0 32 32"><rect x="4" y="6" width="24" height="20" fill="white" stroke="black" stroke-width="2"/><text x="10" y="20" font-size="14" font-weight="bold">$</text></svg><span>Loans</span></div>
+            <div class="icon-wrapper" onclick="openWindow('tipcalc')"><svg viewBox="0 0 32 32"><rect x="6" y="6" width="20" height="20" fill="white" stroke="black" stroke-width="2"/><text x="10" y="22" font-size="14">%</text></svg><span>Tip Calc</span></div>
+            <div class="icon-wrapper" onclick="openWindow('speak')"><svg viewBox="0 0 32 32"><path d="M4,10 h10 l8,-6 v24 l-8,-6 h-10 z" fill="white" stroke="black" stroke-width="2"/><path d="M26,10 a10,10 0 0,1 0,12" fill="none" stroke="black" stroke-width="2"/></svg><span>Speak</span></div>
+            <div class="icon-wrapper" onclick="openWindow('typer')"><svg viewBox="0 0 32 32"><rect x="2" y="6" width="28" height="20" fill="white" stroke="black"/><text x="4" y="20" font-family="monospace">A_</text></svg><span>Typer</span></div>
+            <div class="icon-wrapper" onclick="openWindow('ascii')"><svg viewBox="0 0 32 32"><text x="4" y="22" font-size="10">0101</text><rect x="2" y="2" width="28" height="28" fill="none" stroke="black"/></svg><span>ASCII</span></div>
+            <div class="icon-wrapper" onclick="openWindow('calendar')"><svg viewBox="0 0 32 32"><rect x="4" y="6" width="24" height="20" fill="white" stroke="black" stroke-width="2"/><rect x="4" y="6" width="24" height="6" fill="black"/><text x="8" y="24" font-size="10">26</text></svg><span>Calendar</span></div>
+            <div class="icon-wrapper" onclick="openWindow('stopwatch')"><svg viewBox="0 0 32 32"><circle cx="16" cy="18" r="10" fill="white" stroke="black" stroke-width="2"/><line x1="16" y1="18" x2="16" y2="12" stroke="black"/><rect x="14" y="4" width="4" height="4" fill="black"/></svg><span>Stopwatch</span></div>
+            <div class="icon-wrapper" onclick="openWindow('piano')"><svg viewBox="0 0 32 32"><rect x="4" y="8" width="24" height="16" fill="white" stroke="black"/><line x1="8" y1="8" x2="8" y2="24" stroke="black"/><line x1="12" y1="8" x2="12" y2="24" stroke="black"/><line x1="16" y1="8" x2="16" y2="24" stroke="black"/><line x1="20" y1="8" x2="20" y2="24" stroke="black"/><line x1="24" y1="8" x2="24" y2="24" stroke="black"/><rect x="7" y="8" width="2" height="10" fill="black"/><rect x="11" y="8" width="2" height="10" fill="black"/><rect x="19" y="8" width="2" height="10" fill="black"/><rect x="23" y="8" width="2" height="10" fill="black"/></svg><span>Piano</span></div>
+            <div class="icon-wrapper" onclick="openWindow('drummer')"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="white" stroke="black"/><line x1="16" y1="16" x2="24" y2="10" stroke="black"/><circle cx="16" cy="16" r="2" fill="black"/></svg><span>Drummer</span></div>
+            <div class="icon-wrapper" onclick="openWindow('timer')"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="white" stroke="black" stroke-width="2"/><line x1="16" y1="16" x2="16" y2="8" stroke="black"/><rect x="14" y="2" width="4" height="2" fill="black"/></svg><span>Timer</span></div>
+            <div class="icon-wrapper" onclick="openWindow('dice')"><svg viewBox="0 0 32 32"><rect x="6" y="6" width="20" height="20" rx="4" fill="white" stroke="black" stroke-width="2"/><circle cx="11" cy="11" r="2" fill="black"/><circle cx="21" cy="21" r="2" fill="black"/></svg><span>Dice</span></div>
+            <div class="icon-wrapper" onclick="openWindow('worldclock')"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="white" stroke="black"/><path d="M16,2 v28 M2,16 h28 M6,6 l20,20 M6,26 l20,-20" stroke="black" fill="none"/></svg><span>World Clock</span></div>
+            <div class="icon-wrapper" onclick="openWindow('dayfinder')"><svg viewBox="0 0 32 32"><rect x="4" y="6" width="24" height="20" fill="white" stroke="black"/><text x="10" y="20" font-size="14">Mo</text></svg><span>Day Finder</span></div>
+            <div class="icon-wrapper" onclick="openWindow('quotes')"><svg viewBox="0 0 32 32"><rect x="4" y="4" width="24" height="24" fill="white" stroke="black"/><text x="8" y="20" font-size="16">"</text></svg><span>Quotes</span></div>
+            <div class="icon-wrapper" onclick="openWindow('morse')"><svg viewBox="0 0 32 32"><rect x="4" y="10" width="24" height="12" fill="white" stroke="black"/><circle cx="10" cy="16" r="2" fill="black"/><rect x="16" y="14" width="10" height="4" fill="black"/></svg><span>Morse</span></div>
+            <div class="icon-wrapper" onclick="openWindow('metronome')"><svg viewBox="0 0 32 32"><path d="M16,4 l-8,24 h16 z" fill="white" stroke="black"/><line x1="16" y1="4" x2="16" y2="24" stroke="black"/></svg><span>Metronome</span></div>
+            <div class="icon-wrapper" onclick="openWindow('coinflip')"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="white" stroke="black"/><text x="12" y="20" font-size="12">H</text></svg><span>Coin Flip</span></div>
+            <div class="icon-wrapper" onclick="openWindow('magic8ball')"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="black"/><text x="12" y="20" font-size="12" fill="white">8</text></svg><span>8-Ball</span></div>
+            <div class="icon-wrapper" onclick="openWindow('pattern')"><svg viewBox="0 0 32 32"><rect x="4" y="4" width="24" height="24" fill="white" stroke="black"/><rect x="8" y="8" width="4" height="4" fill="black"/><rect x="16" y="8" width="4" height="4" fill="black"/><rect x="24" y="8" width="4" height="4" fill="black"/><rect x="12" y="12" width="4" height="4" fill="black"/><rect x="20" y="12" width="4" height="4" fill="black"/><rect x="8" y="16" width="4" height="4" fill="black"/><rect x="16" y="16" width="4" height="4" fill="black"/><rect x="24" y="16" width="4" height="4" fill="black"/></svg><span>Pattern</span></div>
+            <div class="icon-wrapper" onclick="openWindow('passgen')"><svg viewBox="0 0 32 32"><rect x="4" y="10" width="24" height="12" fill="white" stroke="black"/><text x="6" y="20" font-size="12">***</text></svg><span>Pass Gen</span></div>
+            <div class="icon-wrapper" onclick="openWindow('jokes')"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="white" stroke="black"/><path d="M10,20 q6,4 12,0" fill="none" stroke="black"/></svg><span>Jokes</span></div>
+            <div class="icon-wrapper" onclick="openWindow('control')"><svg viewBox="0 0 32 32"><rect x="4" y="4" width="24" height="24" fill="white" stroke="black" stroke-width="2"/><rect x="6" y="10" width="4" height="12" fill="black"/><rect x="14" y="6" width="4" height="16" fill="black"/><rect x="22" y="14" width="4" height="8" fill="black"/></svg><span>Control</span></div>
+        </div>
+    </div>
+    
+    <!-- GAMES FOLDER (GRID) -->
+    <div id="games" class="window desktop-window" style="top:120px; left:120px; width:400px;">
+        <div class="title-bar" onmousedown="startDrag(event, 'games')"><div class="close" onclick="closeWindow('games')"></div><h1 class="title">Games</h1></div>
+        <div class="window-pane folder-grid">
+             <div class="icon-wrapper" onclick="openWindow('connect4')"><svg viewBox="0 0 32 32"><rect x="4" y="4" width="24" height="24" fill="black"/><circle cx="10" cy="10" r="3" fill="white"/><circle cx="22" cy="22" r="3" fill="white"/></svg><span>Connect4</span></div>
+             <div class="icon-wrapper" onclick="openWindow('videopoker')"><svg viewBox="0 0 32 32"><rect x="6" y="4" width="14" height="20" fill="white" stroke="black"/><text x="8" y="18" font-size="10">VP</text></svg><span>Poker</span></div>
+             <div class="icon-wrapper" onclick="openWindow('codebreaker')"><svg viewBox="0 0 32 32"><circle cx="10" cy="10" r="4" fill="black"/><circle cx="22" cy="10" r="4" fill="white" stroke="black"/><circle cx="10" cy="22" r="4" fill="white" stroke="black"/><circle cx="22" cy="22" r="4" fill="black"/></svg><span>CodeBrk</span></div>
+             <div class="icon-wrapper" onclick="openWindow('blackjack')"><svg viewBox="0 0 32 32"><rect x="6" y="4" width="14" height="20" fill="white" stroke="black"/><text x="9" y="18" font-size="12">A</text><text x="14" y="18" font-size="12">♠</text></svg><span>Blackjack</span></div>
+             <div class="icon-wrapper" onclick="openWindow('simon')"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="white" stroke="black"/><line x1="16" y1="4" x2="16" y2="28" stroke="black"/><line x1="4" y1="16" x2="28" y2="16" stroke="black"/></svg><span>Simon</span></div>
+             <div class="icon-wrapper" onclick="openWindow('mole')"><svg viewBox="0 0 32 32"><rect x="4" y="16" width="24" height="10" fill="black"/><circle cx="16" cy="16" r="6" fill="white" stroke="black"/></svg><span>Whack</span></div>
+             <div class="icon-wrapper" onclick="openWindow('rps')"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="white" stroke="black"/><text x="8" y="20" font-size="14">✊</text></svg><span>RPS</span></div>
+             <div class="icon-wrapper" onclick="openWindow('guess')"><svg viewBox="0 0 32 32"><text x="8" y="24" font-size="24">?</text></svg><span>Guess</span></div>
+             <div class="icon-wrapper" onclick="openWindow('slots')"><svg viewBox="0 0 32 32"><rect x="4" y="6" width="24" height="20" fill="white" stroke="black"/><line x1="4" y1="16" x2="28" y2="16" stroke="black"/><text x="6" y="14" font-size="10">7</text><text x="14" y="14" font-size="10">7</text><text x="22" y="14" font-size="10">7</text></svg><span>Slots</span></div>
+             <div class="icon-wrapper" onclick="openWindow('breakout')"><svg viewBox="0 0 32 32"><rect x="4" y="4" width="24" height="8" fill="black"/><rect x="12" y="24" width="8" height="2" fill="black"/><circle cx="16" cy="18" r="2" fill="black"/></svg><span>Breakout</span></div>
+             <div class="icon-wrapper" onclick="openWindow('tictactoe')"><svg viewBox="0 0 32 32"><line x1="10" y1="6" x2="10" y2="26" stroke="black"/><line x1="22" y1="6" x2="22" y2="26" stroke="black"/><line x1="4" y1="12" x2="28" y2="12" stroke="black"/><line x1="4" y1="20" x2="28" y2="20" stroke="black"/></svg><span>TicTacToe</span></div>
+             <div class="icon-wrapper" onclick="openWindow('blocks')"><svg viewBox="0 0 32 32"><rect x="8" y="8" width="8" height="8" fill="black"/><rect x="16" y="8" width="8" height="8" fill="black"/><rect x="8" y="16" width="8" height="8" fill="black"/><rect x="16" y="16" width="8" height="8" fill="none" stroke="black" stroke-width="2"/></svg><span>Blocks</span></div>
+             <div class="icon-wrapper" onclick="openWindow('pong')"><svg viewBox="0 0 32 32"><rect x="2" y="2" width="28" height="28" fill="none" stroke="black" stroke-width="2"/><rect x="4" y="10" width="2" height="6" fill="black"/><rect x="26" y="14" width="2" height="6" fill="black"/><rect x="15" y="15" width="2" height="2" fill="black"/></svg><span>Pong</span></div>
+             <div class="icon-wrapper" onclick="openWindow('snake')"><svg viewBox="0 0 32 32"><rect x="4" y="4" width="24" height="24" fill="white" stroke="black" stroke-width="2"/><path d="M8,20 h4 v-4 h4 v4 h4" fill="none" stroke="black" stroke-width="2"/></svg><span>Snake</span></div>
+             <div class="icon-wrapper" onclick="openWindow('minesweeper')"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="black"/><line x1="16" y1="4" x2="16" y2="8" stroke="white" stroke-width="2"/><line x1="16" y1="24" x2="16" y2="28" stroke="white" stroke-width="2"/><line x1="4" y1="16" x2="8" y1="16" stroke="white" stroke-width="2"/><line x1="24" y1="16" x2="28" y1="16" stroke="white" stroke-width="2"/></svg><span>Mines</span></div>
+             <div class="icon-wrapper" onclick="openWindow('puzzle')"><svg viewBox="0 0 32 32"><rect x="4" y="4" width="24" height="24" fill="white" stroke="black" stroke-width="2"/><line x1="16" y1="4" x2="16" y2="28" stroke="black" stroke-width="2"/><line x1="4" y1="16" x2="28" y2="16" stroke="black" stroke-width="2"/><text x="8" y="14" font-size="10">1</text><text x="20" y="26" font-size="10">5</text></svg><span>Puzzle</span></div>
+             <div class="icon-wrapper" onclick="openWindow('hangman')"><svg viewBox="0 0 32 32"><line x1="8" y1="28" x2="24" y2="28" stroke="black"/><line x1="16" y1="28" x2="16" y2="4" stroke="black"/><line x1="16" y1="4" x2="24" y2="4" stroke="black"/><line x1="24" y1="4" x2="24" y2="8" stroke="black"/></svg><span>Hangman</span></div>
+             <div class="icon-wrapper" onclick="openWindow('reaction')"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" stroke="black" fill="none"/><circle cx="16" cy="16" r="4" fill="black"/></svg><span>Reaction</span></div>
+             <div class="icon-wrapper" onclick="openWindow('life')"><svg viewBox="0 0 32 32"><rect x="8" y="8" width="16" height="16" fill="white" stroke="black"/><rect x="12" y="12" width="4" height="4" fill="black"/><rect x="16" y="16" width="4" height="4" fill="black"/><rect x="16" y="12" width="4" height="4" fill="black"/></svg><span>Life</span></div>
+             <div class="icon-wrapper" onclick="openWindow('maze')"><svg viewBox="0 0 32 32"><rect x="4" y="4" width="24" height="24" fill="white" stroke="black"/><path d="M8,8 h16 v4 h-12 v12" fill="none" stroke="black"/></svg><span>Maze</span></div>
+             <div class="icon-wrapper" onclick="openWindow('memory')"><svg viewBox="0 0 32 32"><rect x="6" y="6" width="20" height="20" fill="none" stroke="black" stroke-width="2"/><text x="11" y="24" font-size="18" font-family="Chicago">?</text></svg><span>Pairs</span></div>
+        </div>
+    </div>
+
+    <!-- VIDEO POKER -->
+    <div id="videopoker" class="window desktop-window" style="top:220px; left:400px; width:300px;">
+        <div class="title-bar" onmousedown="startDrag(event, 'videopoker')"><div class="close" onclick="closeWindow('videopoker')"></div><h1 class="title">Video Poker</h1></div>
+        <div class="window-pane" style="background:#eee;">
+            <div id="vp-msg" style="text-align:center; margin-bottom:5px; height:16px; font-weight:bold;">Jacks or Better</div>
+            <div class="poker-hand" id="vp-hand"></div>
+            <div style="display:flex; justify-content:space-between; padding:0 15px; margin-bottom:10px;">
+                <button class="btn" onclick="vpDeal()">DEAL / DRAW</button>
+                <div style="line-height:24px;">Bet: <span id="vp-bet">1</span> | Cred: <span id="vp-cred">100</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONNECT 4 (NEW) -->
+    <div id="connect4" class="window desktop-window" style="top:180px; left:300px; width:250px;">
+        <div class="title-bar" onmousedown="startDrag(event, 'connect4')"><div class="close" onclick="closeWindow('connect4')"></div><h1 class="title">Connect 4</h1></div>
+        <div class="window-pane" style="display:flex; flex-direction:column; align-items:center;">
+            <div id="c4-board" class="c4-grid"></div>
+            <p id="c4-status" style="margin:5px 0;">Player's Turn</p>
+            <button class="btn" onclick="initConnect4()">Reset</button>
+        </div>
+    </div>
+    
+    <!-- PATTERN MAKER (NEW) -->
+    <div id="pattern" class="window desktop-window" style="top:100px; left:300px; width:220px;">
+        <div class="title-bar" onmousedown="startDrag(event,'pattern')"><div class="close" onclick="closeWindow('pattern')"></div><h1 class="title">Pattern</h1></div>
+        <div class="window-pane" style="display:flex; flex-direction:column; align-items:center;">
+            <div id="pat-grid" class="pat-grid"></div>
+            <button class="btn" style="margin-top:10px;" onclick="applyPattern()">Set Desktop</button>
+        </div>
+    </div>
+    
+    <!-- PASS GEN (NEW) -->
+    <div id="passgen" class="window desktop-window" style="top:120px; left:350px; width:220px;">
+        <div class="title-bar" onmousedown="startDrag(event,'passgen')"><div class="close" onclick="closeWindow('passgen')"></div><h1 class="title">Pass Gen</h1></div>
+        <div class="window-pane">
+            <label>Length: <span id="pg-len-val">12</span></label>
+            <input type="range" id="pg-len" min="6" max="24" value="12" oninput="document.getElementById('pg-len-val').innerText=this.value">
+            <div><input type="checkbox" id="pg-sym" checked> Symbols</div>
+            <div><input type="checkbox" id="pg-num" checked> Numbers</div>
+            <button class="btn" style="width:100%; margin:5px 0;" onclick="genPass()">Generate</button>
+            <input type="text" id="pg-out" style="width:100%; font-family:monospace;" readonly>
+        </div>
+    </div>
+    
+    <!-- JOKES (NEW) -->
+    <div id="jokes" class="window desktop-window" style="top:180px; left:200px; width:250px;">
+        <div class="title-bar" onmousedown="startDrag(event,'jokes')"><div class="close" onclick="closeWindow('jokes')"></div><h1 class="title">Jokes</h1></div>
+        <div class="window-pane">
+            <p id="joke-text" style="min-height:60px;">Click below for a laugh.</p>
+            <button class="btn" style="width:100%;" onclick="tellJoke()">Tell Me Another</button>
+        </div>
+    </div>
+
+    <!-- CODE BREAKER -->
+    <div id="codebreaker" class="window desktop-window" style="top:180px; left:150px; width:200px;">
+        <div class="title-bar" onmousedown="startDrag(event, 'codebreaker')"><div class="close" onclick="closeWindow('codebreaker')"></div><h1 class="title">Code Breaker</h1></div>
+        <div class="window-pane">
+            <div id="cb-board" style="height:150px; overflow-y:scroll; border:1px solid black; margin-bottom:5px; padding:2px;"></div>
+            <div style="display:flex; justify-content:center; gap:2px; margin-bottom:5px;">
+                <input type="number" id="cb-1" min="1" max="6" value="1" style="width:30px;">
+                <input type="number" id="cb-2" min="1" max="6" value="1" style="width:30px;">
+                <input type="number" id="cb-3" min="1" max="6" value="1" style="width:30px;">
+                <input type="number" id="cb-4" min="1" max="6" value="1" style="width:30px;">
+            </div>
+            <button class="btn" style="width:100%" onclick="submitGuess()">Guess (1-6)</button>
+            <button class="btn" style="width:100%; margin-top:2px;" onclick="initCodeBreaker()">Reset</button>
+        </div>
+    </div>
+    
+    <!-- DAY FINDER -->
+    <div id="dayfinder" class="window desktop-window" style="top:120px; left:250px; width:220px;">
+        <div class="title-bar" onmousedown="startDrag(event, 'dayfinder')"><div class="close" onclick="closeWindow('dayfinder')"></div><h1 class="title">Day Finder</h1></div>
+        <div class="window-pane">
+            <p>Enter a date:</p>
+            <input type="date" id="df-input" style="width:100%; margin-bottom:5px;">
+            <button class="btn" style="width:100%;" onclick="findDay()">Find Day</button>
+            <p id="df-res" style="text-align:center; font-weight:bold; margin-top:10px;">--</p>
+        </div>
+    </div>
+
+    <!-- QUOTES -->
+    <div id="quotes" class="window desktop-window" style="top:150px; left:300px; width:250px;">
+        <div class="title-bar" onmousedown="startDrag(event, 'quotes')"><div class="close" onclick="closeWindow('quotes')"></div><h1 class="title">Quotes</h1></div>
+        <div class="window-pane">
+            <p id="quote-text" style="font-style:italic; height:60px; overflow-y:auto;">"The computer for the rest of us."</p>
+            <div style="text-align:right; font-weight:bold; margin-bottom:5px;" id="quote-author">- Apple</div>
+            <button class="btn" style="width:100%;" onclick="nextQuote()">Next Quote</button>
+        </div>
+    </div>
+
+    <!-- MAGIC 8 BALL -->
+    <div id="magic8ball" class="window desktop-window" style="top:200px; left:200px; width:200px;">
+        <div class="title-bar" onmousedown="startDrag(event,'magic8ball')"><div class="close" onclick="closeWindow('magic8ball')"></div><h1 class="title">Magic 8-Ball</h1></div>
+        <div class="window-pane" style="text-align:center;">
+            <div class="ball-circle">
+                <div class="ball-window" id="m8b-ans">8</div>
+            </div>
+            <input type="text" style="width:100%; margin-top:10px; margin-bottom:5px;" placeholder="Ask a question...">
+            <button class="btn" onclick="ask8Ball()">Shake</button>
+        </div>
+    </div>
+    
+    <!-- COIN FLIP -->
+    <div id="coinflip" class="window desktop-window" style="top:220px; left:300px; width:180px;">
+        <div class="title-bar" onmousedown="startDrag(event,'coinflip')"><div class="close" onclick="closeWindow('coinflip')"></div><h1 class="title">Coin Flip</h1></div>
+        <div class="window-pane" style="text-align:center;">
+            <div id="coin" class="coin">H</div>
+            <button class="btn" style="width:100%; margin-top:10px;" onclick="flipCoin()">Flip</button>
+        </div>
+    </div>
+
+    <!-- HANGMAN -->
+    <div id="hangman" class="window desktop-window" style="top:160px; left:300px; width:240px;">
+        <div class="title-bar" onmousedown="startDrag(event,'hangman')"><div class="close" onclick="closeWindow('hangman')"></div><h1 class="title">Hangman</h1></div>
+        <div class="window-pane">
+            <canvas id="hangCanvas" width="100" height="80" style="border:1px solid black; margin: 0 auto; display:block;"></canvas>
+            <div id="hang-word" style="text-align:center; font-size:16px; letter-spacing:2px; margin:5px 0;">_ _ _ _</div>
+            <div id="hang-letters" class="hangman-letters"></div>
+            <button class="btn" style="width:100%; margin-top:5px;" onclick="initHangman()">New Word</button>
+        </div>
+    </div>
+
+    <!-- TYPER -->
+    <div id="typer" class="window desktop-window" style="top:180px; left:250px; width:280px;">
+        <div class="title-bar" onmousedown="startDrag(event,'typer')"><div class="close" onclick="closeWindow('typer')"></div><h1 class="title">Typer</h1></div>
+        <div class="window-pane">
+            <p id="typer-target" style="margin:0 0 5px 0; height:40px; overflow:hidden; border:1px dotted black; padding:2px;">Click Start to begin...</p>
+            <input type="text" id="typer-input" style="width:100%; margin-bottom:5px;" disabled oninput="checkTyper()">
+            <div style="display:flex; justify-content:space-between;">
+                <button class="btn" onclick="initTyper()">Start</button>
+                <span>WPM: <b id="typer-wpm">0</b></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- REACTION -->
+    <div id="reaction" class="window desktop-window" style="top:200px; left:350px; width:200px;">
+        <div class="title-bar" onmousedown="startDrag(event,'reaction')"><div class="close" onclick="closeWindow('reaction')"></div><h1 class="title">Reaction</h1></div>
+        <div class="window-pane">
+            <div id="react-box" style="height:100px; border:2px solid black; display:flex; align-items:center; justify-content:center; cursor:pointer;" onmousedown="clickReaction()">
+                Click to Start
+            </div>
+            <div style="text-align:center; margin-top:5px;">Best: <span id="react-best">--</span> ms</div>
+        </div>
+    </div>
+
+    <!-- ASCII -->
+    <div id="ascii" class="window desktop-window" style="top:150px; left:150px; width:200px;">
+        <div class="title-bar" onmousedown="startDrag(event,'ascii')"><div class="close" onclick="closeWindow('ascii')"></div><h1 class="title">ASCII Table</h1></div>
+        <div class="window-pane">
+            <div style="display:flex; border-bottom:2px solid black; font-weight:bold; padding-bottom:2px;">
+                <span style="flex:1; text-align:center;">DEC</span>
+                <span style="flex:1; text-align:center;">HEX</span>
+                <span style="flex:1; text-align:center;">CHR</span>
+            </div>
+            <div id="ascii-list" style="height:150px; overflow-y:scroll;"></div>
+        </div>
+    </div>
+
+    <!-- BLACKJACK -->
+    <div id="blackjack" class="window desktop-window" style="top:250px; left:400px; width:280px;">
+        <div class="title-bar" onmousedown="startDrag(event,'blackjack')"><div class="close" onclick="closeWindow('blackjack')"></div><h1 class="title">Blackjack</h1></div>
+        <div class="window-pane" style="background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAABZJREFUeNpi/P//PwMTAwMDEAAxAAgwAA4ZAuc7+x6OAAAAAElFTkSuQmCC');">
+            <div style="background:white; padding:5px; margin-bottom:5px; height:170px; border:1px solid black;">
+                <div style="font-size:10px;">DEALER: <span id="bj-d-score">?</span></div>
+                <div id="bj-dealer-cards" style="display:flex; margin-top:5px;"></div>
+            </div>
+            <div style="background:white; padding:5px; margin-bottom:5px; height:170px; border:1px solid black;">
+                <div style="font-size:10px;">YOU: <span id="bj-p-score">0</span></div>
+                <div id="bj-player-cards" style="display:flex; margin-top:5px;"></div>
+            </div>
+            <div style="display:flex; gap:5px;">
+                <button class="btn" style="flex:1" onclick="bjHit()">Hit</button>
+                <button class="btn" style="flex:1" onclick="bjStand()">Stand</button>
+                <button class="btn" style="flex:1" onclick="initBlackjack()">Deal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SIMON -->
+    <div id="simon" class="window desktop-window" style="top:200px; left:300px; width:220px;">
+        <div class="title-bar" onmousedown="startDrag(event,'simon')"><div class="close" onclick="closeWindow('simon')"></div><h1 class="title">Simon</h1></div>
+        <div class="window-pane">
+            <div class="simon-grid">
+                <div class="simon-btn" id="s-0" style="background:white;" onclick="simonInput(0)"></div>
+                <div class="simon-btn" id="s-1" style="background:black;" onclick="simonInput(1)"></div>
+                <div class="simon-btn" id="s-2" style="background:black;" onclick="simonInput(2)"></div>
+                <div class="simon-btn" id="s-3" style="background:white;" onclick="simonInput(3)"></div>
+            </div>
+            <div style="text-align:center; margin-top:10px;">
+                <button class="btn" onclick="initSimon()">Start Game</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MOLE -->
+    <div id="mole" class="window desktop-window" style="top:180px; left:250px; width:200px;">
+        <div class="title-bar" onmousedown="startDrag(event,'mole')"><div class="close" onclick="closeWindow('mole')"></div><h1 class="title">Whack</h1></div>
+        <div class="window-pane">
+            <div style="text-align:center; margin-bottom:5px;">Score: <span id="mole-score">0</span></div>
+            <div class="mole-grid" id="mole-grid">
+                <!-- generated -->
+            </div>
+            <button class="btn" style="width:100%; margin-top:10px;" onclick="initMole()">Start</button>
+        </div>
+    </div>
+
+    <!-- SLOTS -->
+    <div id="slots" class="window desktop-window" style="top:200px; left:300px; width:220px;">
+        <div class="title-bar" onmousedown="startDrag(event,'slots')"><div class="close" onclick="closeWindow('slots')"></div><h1 class="title">Slots</h1></div>
+        <div class="window-pane" style="text-align:center;">
+            <div class="slots-row">
+                <div id="slot1" class="slots-reel">7</div>
+                <div id="slot2" class="slots-reel">7</div>
+                <div id="slot3" class="slots-reel">7</div>
+            </div>
+            <button class="btn" style="width:100%; height:40px; margin-top:10px;" onclick="spinSlots()">SPIN</button>
+        </div>
+    </div>
+
+    <!-- RPS GAME -->
+    <div id="rps" class="window desktop-window" style="top:180px; left:350px; width:200px;">
+        <div class="title-bar" onmousedown="startDrag(event,'rps')"><div class="close" onclick="closeWindow('rps')"></div><h1 class="title">RPS</h1></div>
+        <div class="window-pane">
+            <div id="rps-result" style="height:40px; font-weight:bold; margin-bottom:10px;">Choose...</div>
+            <div style="display:flex; gap:5px;">
+                <button class="btn" style="flex:1" onclick="playRPS('Rock')">✊</button>
+                <button class="btn" style="flex:1" onclick="playRPS('Paper')">✋</button>
+                <button class="btn" style="flex:1" onclick="playRPS('Scissors')">✌️</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- GUESS GAME -->
+    <div id="guess" class="window desktop-window" style="top:200px; left:200px; width:200px;">
+        <div class="title-bar" onmousedown="startDrag(event,'guess')"><div class="close" onclick="closeWindow('guess')"></div><h1 class="title">Guess</h1></div>
+        <div class="window-pane">
+            <p style="margin:0 0 5px 0;">Guess 1-100</p>
+            <input type="number" id="guess-input" style="width:60px; margin-bottom:5px;">
+            <button class="btn" onclick="checkGuess()">Guess</button>
+            <p id="guess-msg" style="margin:5px 0; font-weight:bold;"></p>
+            <button class="btn" onclick="initGuess()" style="font-size:10px;">Reset</button>
+        </div>
+    </div>
+
+    <!-- BREAKOUT -->
+    <div id="breakout" class="window desktop-window" style="top:150px; left:300px; width:260px;">
+        <div class="title-bar" onmousedown="startDrag(event,'breakout')"><div class="close" onclick="closeWindow('breakout')"></div><h1 class="title">Breakout</h1></div>
+        <div class="window-pane">
+            <canvas id="breakoutCanvas" width="240" height="300" style="background:white; border:1px solid black; display:block; margin:0 auto;"></canvas>
+            <button class="btn" style="width:100%; margin-top:5px;" onclick="initBreakout()">New Game</button>
+        </div>
+    </div>
+
+    <!-- TIC TAC TOE -->
+    <div id="tictactoe" class="window desktop-window" style="top:200px; left:400px; width:180px;">
+        <div class="title-bar" onmousedown="startDrag(event,'tictactoe')"><div class="close" onclick="closeWindow('tictactoe')"></div><h1 class="title">Tic Tac Toe</h1></div>
+        <div class="window-pane">
+            <div id="ttt-board" class="ttt-grid"></div>
+            <p id="ttt-status" style="text-align:center; margin:5px 0;">Your Turn (X)</p>
+            <button class="btn" style="width:100%" onclick="initTTT()">Reset</button>
+        </div>
+    </div>
+
+    <!-- MINESWEEPER -->
+    <div id="minesweeper" class="window desktop-window" style="top:200px; left:400px; width:auto;">
+        <div class="title-bar" onmousedown="startDrag(event,'minesweeper')"><div class="close" onclick="closeWindow('minesweeper')"></div><h1 class="title">Mines</h1></div>
+        <div class="window-pane" style="background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAABZJREFUeNpi/P//PwMTAwMDEAAxAAgwAA4ZAuc7+x6OAAAAAElFTkSuQmCC');">
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px; background:white; padding:4px; border:2px solid black;">
+                <div style="background:black; color:white; font-family:monospace; padding:0 4px; font-size: 16px;" id="mine-mines">010</div>
+                <button class="btn" onclick="initMines()" style="font-size:16px; padding:0 6px;" id="mine-face">😮</button>
+                <div style="background:black; color:white; font-family:monospace; padding:0 4px; font-size: 16px;" id="mine-timer">000</div>
+            </div>
+            <div id="mine-field" class="mine-grid" oncontextmenu="return false;"></div>
+        </div>
+    </div>
+
+    <!-- PONG -->
+    <div id="pong" class="window desktop-window" style="top: 200px; left: 200px; width: 320px;">
+        <div class="title-bar" onmousedown="startDrag(event, 'pong')"><div class="close" onclick="closeWindow('pong')"></div><h1 class="title">Pong</h1></div>
+        <div class="window-pane">
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                <span>Player: <b id="pong-p-score">0</b></span>
+                <span>CPU: <b id="pong-c-score">0</b></span>
+            </div>
+            <canvas id="pongCanvas" width="300" height="200" style="background:black; display:block; margin:0 auto; border:2px solid black;"></canvas>
+            <div style="text-align:center; margin-top:5px; font-size:10px;">Use Mouse to Move</div>
+            <button class="btn" style="width:100%; margin-top:2px;" onclick="initPong()">New Game</button>
+        </div>
+    </div>
+
+    <!-- SNAKE -->
+    <div id="snake" class="window desktop-window" style="top:150px; left:150px; width:220px;">
+        <div class="title-bar" onmousedown="startDrag(event,'snake')"><div class="close" onclick="closeWindow('snake')"></div><h1 class="title">Snake</h1></div>
+        <div class="window-pane">
+            <div style="margin-bottom:5px;">Score: <b id="snake-score">0</b></div>
+            <canvas id="snakeCanvas" width="200" height="200" style="background:white; border:2px solid black; display:block; margin:0 auto;"></canvas>
+            <div style="text-align:center; margin-top:5px; font-size:10px;">Arrow Keys to Move</div>
+            <button class="btn" style="width:100%; margin-top:2px;" onclick="initSnake()">New Game</button>
+        </div>
+    </div>
+
+    <!-- BLOCKS (TETRIS) -->
+    <div id="blocks" class="window desktop-window" style="top: 150px; left: 450px; width: 220px;">
+        <div class="title-bar" onmousedown="startDrag(event, 'blocks')"><div class="close" onclick="closeWindow('blocks')"></div><h1 class="title">Blocks</h1></div>
+        <div class="window-pane">
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                <span>Score: <b id="tetris-score">0</b></span>
+                <span>Lvl: <b id="tetris-level">1</b></span>
+            </div>
+            <canvas id="blocksCanvas" width="200" height="300" style="background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAABZJREFUeNpi/P//PwMTAwMDEAAxAAgwAA4ZAuc7+x6OAAAAAElFTkSuQmCC'); border:2px solid black; display:block; margin:0 auto;"></canvas>
+            <div style="text-align:center; margin-top:5px; font-size:10px;">Arrows to Move/Rotate</div>
+            <button class="btn" style="width:100%; margin-top:2px;" onclick="initBlocks()">New Game</button>
+        </div>
+    </div>
+
+    <!-- PUZZLE -->
+    <div id="puzzle" class="window desktop-window" style="top:220px; left:250px; width:250px;">
+        <div class="title-bar" onmousedown="startDrag(event,'puzzle')"><div class="close" onclick="closeWindow('puzzle')"></div><h1 class="title">Puzzle</h1></div>
+        <div class="window-pane">
+            <div id="puzzle-grid" class="puzzle-grid"></div>
+            <button class="btn" style="margin-top:5px;" onclick="initPuzzle()">Shuffle</button>
+        </div>
+    </div>
+    
+    <!-- LIFE -->
+    <div id="life" class="window desktop-window" style="top:150px; left:250px; width:270px;">
+        <div class="title-bar" onmousedown="startDrag(event,'life')"><div class="close" onclick="closeWindow('life')"></div><h1 class="title">Life</h1></div>
+        <div class="window-pane">
+            <canvas id="lifeCanvas" width="250" height="200" style="border:1px solid black; margin-bottom:5px;"></canvas>
+            <div style="display:flex; gap:5px;">
+                <button class="btn" onclick="initLife()">Random</button>
+                <button class="btn" onclick="toggleLife()">Run/Stop</button>
+                <button class="btn" onclick="clearLife()">Clear</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- MAZE -->
+    <div id="maze" class="window desktop-window" style="top:170px; left:280px; width:270px;">
+        <div class="title-bar" onmousedown="startDrag(event,'maze')"><div class="close" onclick="closeWindow('maze')"></div><h1 class="title">Maze</h1></div>
+        <div class="window-pane">
+            <canvas id="mazeCanvas" width="250" height="200" style="border:1px solid black; margin-bottom:5px;"></canvas>
+            <div style="text-align:center;">Use Arrow Keys</div>
+            <button class="btn" style="width:100%;" onclick="initMaze()">New Maze</button>
+        </div>
+    </div>
+    
+    <!-- MORSE -->
+    <div id="morse" class="window desktop-window" style="top:200px; left:150px; width:250px;">
+        <div class="title-bar" onmousedown="startDrag(event,'morse')"><div class="close" onclick="closeWindow('morse')"></div><h1 class="title">Morse</h1></div>
+        <div class="window-pane">
+            <textarea id="morse-input" style="width:100%; height:60px; margin-bottom:5px; resize:none;">SOS</textarea>
+            <div id="morse-output" style="width:100%; height:40px; border:1px dotted black; margin-bottom:5px; padding:2px; word-break:break-all;">... --- ...</div>
+            <div style="display:flex; gap:5px;">
+                <button class="btn" onclick="transMorse()">Translate</button>
+                <button class="btn" onclick="playMorse()">Play</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- METRONOME -->
+    <div id="metronome" class="window desktop-window" style="top:220px; left:350px; width:200px;">
+        <div class="title-bar" onmousedown="startDrag(event,'metronome')"><div class="close" onclick="closeWindow('metronome')"></div><h1 class="title">Metronome</h1></div>
+        <div class="window-pane" style="text-align:center;">
+            <div id="bpm-disp" style="font-size:32px; margin-bottom:10px;">100</div>
+            <input type="range" id="bpm-slider" min="40" max="200" value="100" oninput="updateMetroUI()" style="width:100%; margin-bottom:10px;">
+            <button id="metro-btn" class="btn" style="width:100%" onclick="toggleMetronome()">Start</button>
+        </div>
+    </div>
+
+    <!-- MEMORY -->
+    <div id="memory" class="window desktop-window" style="top:220px; left:250px; width:250px;">
+        <div class="title-bar" onmousedown="startDrag(event,'memory')"><div class="close" onclick="closeWindow('memory')"></div><h1 class="title">Pairs</h1></div>
+        <div class="window-pane" style="background:white; display:flex; flex-direction:column; align-items:center;">
+            <div id="memory-grid" class="memory-grid"></div>
+            <button class="btn" style="margin-top:5px;" onclick="initMemory()">Reset</button>
+        </div>
+    </div>
+
+    <!-- ABOUT -->
+    <div id="about" class="modal-overlay"><div class="modal-dialog"><div style="border:2px solid black; padding:15px; text-align:center;"><svg width="48" height="48" viewBox="0 0 48 48" style="margin: 10px auto; display:block;"><path d="M4,8 h40 v28 h-40 z" fill="white" stroke="black" stroke-width="2"/><path d="M8,12 h32 v20 h-32 z" fill="white" stroke="black" stroke-width="2"/><rect x="10" y="38" width="28" height="4" fill="black"/></svg><h1 style="font-size:20px; margin: 10px 0;">System 6 Web</h1><p style="font-size:14px;">© 1988 Apple Computer, Inc.</p><button class="btn" style="margin-top: 15px;" onclick="closeModal('about')">OK</button></div></div></div>
+
+    <script>
+        // --- SYSTEM CORE ---
+        function updateClock() { 
+            const now = new Date(); 
+            let h=now.getHours(), m=now.getMinutes().toString().padStart(2,'0'); 
+            const ampm=h>=12?'PM':'AM'; h=h%12||12; 
+            const el = document.getElementById('clock');
+            if(el) el.innerText=`${h}:${m} ${ampm}`; 
+            
+            if(document.getElementById('worldclock') && document.getElementById('worldclock').classList.contains('visible')) updateWorldTime();
+        }
+        setInterval(updateClock, 1000); updateClock();
+
+        let zIndex=100, activeWin=null, isDragging=false, dragOffset={x:0,y:0};
+        
+        function openWindow(id) { 
+            const el=document.getElementById(id); 
+            if(el){
+                el.classList.add('visible'); 
+                bringToFront(el);
+                
+                // Init apps
+                if(id==='minesweeper') initMines();
+                if(id==='puzzle') initPuzzle();
+                if(id==='snake') setTimeout(initSnake, 50); 
+                if(id==='blocks') setTimeout(initBlocks, 50);
+                if(id==='pong') setTimeout(initPong, 50);
+                if(id==='breakout') setTimeout(initBreakout, 50);
+                if(id==='tictactoe') initTTT();
+                if(id==='calendar') renderCalendar();
+                if(id==='blackjack') initBlackjack();
+                if(id==='guess') initGuess();
+                if(id==='simon') initSimon();
+                if(id==='mole') initMole();
+                if(id==='hangman') initHangman();
+                if(id==='ascii') initAscii();
+                if(id==='life') initLife();
+                if(id==='maze') initMaze();
+                if(id==='videopoker') initVideoPoker();
+                if(id==='codebreaker') initCodeBreaker();
+                if(id==='quotes') initQuotes();
+                if(id==='memory') initMemory();
+                if(id==='pattern') initPattern();
+                if(id==='connect4') initConnect4();
+            } 
+        }
+        function closeWindow(id) { document.getElementById(id).classList.remove('visible'); }
+        function closeActive() { if(activeWin) activeWin.classList.remove('visible'); }
+        function bringToFront(el) { zIndex++; el.style.zIndex=zIndex; activeWin=el; }
+        function openModal(id) { document.getElementById(id).classList.add('visible'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('visible'); }
+        
+        function startDrag(e, id) { const el=document.getElementById(id); bringToFront(el); isDragging=true; activeWin=el; const rect=el.getBoundingClientRect(); dragOffset.x=e.clientX-rect.left; dragOffset.y=e.clientY-rect.top; document.addEventListener('mousemove', onDrag); document.addEventListener('mouseup', endDrag); }
+        function onDrag(e) { if(!isDragging||!activeWin)return; e.preventDefault(); let y=e.clientY-dragOffset.y; if(y<22)y=22; activeWin.style.left=(e.clientX-dragOffset.x)+'px'; activeWin.style.top=y+'px'; }
+        function endDrag() { isDragging=false; document.removeEventListener('mousemove',onDrag); document.removeEventListener('mouseup',endDrag); }
+        
+        document.querySelectorAll('.desktop-window').forEach(w => w.addEventListener('mousedown', () => bringToFront(w)));
+
+        // --- MENU INTERACTION ---
+        const menuItems = document.querySelectorAll('.top-menu-item');
+        let activeMenu = null;
+
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.top-menu-item')) {
+                const clickedItem = e.target.closest('.top-menu-item');
+                if (activeMenu === clickedItem) { closeAllMenus(); } 
+                else { closeAllMenus(); openMenu(clickedItem); }
+            } else {
+                closeAllMenus();
+            }
+        });
+
+        menuItems.forEach(item => {
+            item.addEventListener('mouseenter', () => {
+                if (activeMenu) { closeAllMenus(); openMenu(item); }
+            });
+        });
+
+        function openMenu(item) { item.classList.add('active'); activeMenu = item; }
+        function closeAllMenus() { menuItems.forEach(item => item.classList.remove('active')); activeMenu = null; }
+
+        // --- AUDIO ENGINE ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playTone(freq, duration) {
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'square'; 
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+        
+        // DRUMMER
+        function playDrum(type) {
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            gain.connect(audioCtx.destination);
+            
+            if(type==='kick') {
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                gain.gain.setValueAtTime(1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                osc.connect(gain);
+                osc.start(); osc.stop(audioCtx.currentTime+0.5);
+            } else if(type==='snare') {
+                const bufferSize = audioCtx.sampleRate * 0.2; 
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+                const noise = audioCtx.createBufferSource();
+                noise.buffer = buffer;
+                noise.connect(gain);
+                gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                noise.start();
+            } else if(type==='hat') {
+                const bufferSize = audioCtx.sampleRate * 0.05; 
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+                const noise = audioCtx.createBufferSource();
+                noise.buffer = buffer;
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'highpass'; filter.frequency.value = 1000;
+                noise.connect(filter); filter.connect(gain);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+                noise.start();
+            } else if(type==='tom') {
+                osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.2);
+                gain.gain.setValueAtTime(1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                osc.connect(gain);
+                osc.start(); osc.stop(audioCtx.currentTime+0.2);
+            }
+        }
+
+        // --- HANGMAN GAME ---
+        let hangWord = "", hangErrors = 0;
+        const hangWords = ["APPLE", "SYSTEM", "MACINTOSH", "COMPUTER", "MOUSE", "KEYBOARD", "FLOPPY", "PIXEL", "RETRO", "FINDER"];
+        function initHangman() {
+            hangWord = hangWords[Math.floor(Math.random() * hangWords.length)];
+            hangErrors = 0;
+            document.getElementById('hang-word').innerText = "_ ".repeat(hangWord.length);
+            drawHangman();
+            
+            const letters = document.getElementById('hang-letters');
+            letters.innerHTML = '';
+            for(let i=65; i<=90; i++) {
+                const l = String.fromCharCode(i);
+                const btn = document.createElement('button');
+                btn.innerText = l;
+                btn.className = 'letter-btn';
+                btn.onclick = () => guessLetter(l, btn);
+                letters.appendChild(btn);
+            }
+        }
+        function guessLetter(l, btn) {
+            btn.disabled = true;
+            btn.className += ' used';
+            if(hangWord.includes(l)) {
+                let display = document.getElementById('hang-word').innerText.split(' ');
+                for(let i=0; i<hangWord.length; i++) {
+                    if(hangWord[i] === l) display[i] = l;
+                }
+                document.getElementById('hang-word').innerText = display.join(' ');
+                if(!display.includes('_')) alert('You Win!');
+            } else {
+                hangErrors++;
+                drawHangman();
+                if(hangErrors >= 6) alert('Game Over! Word was ' + hangWord);
+            }
+        }
+        function drawHangman() {
+            const c = document.getElementById('hangCanvas');
+            const ctx = c.getContext('2d');
+            if(hangErrors === 0) ctx.clearRect(0,0,100,80);
+            ctx.lineWidth = 2; ctx.strokeStyle = "black";
+            
+            if(hangErrors === 0) {
+                ctx.beginPath(); ctx.moveTo(10,70); ctx.lineTo(90,70); ctx.stroke(); // Base
+                ctx.beginPath(); ctx.moveTo(30,70); ctx.lineTo(30,10); ctx.lineTo(60,10); ctx.lineTo(60,20); ctx.stroke(); // Pole
+            }
+            if(hangErrors >= 1) { ctx.beginPath(); ctx.arc(60, 25, 5, 0, Math.PI*2); ctx.stroke(); } // Head
+            if(hangErrors >= 2) { ctx.beginPath(); ctx.moveTo(60,30); ctx.lineTo(60,50); ctx.stroke(); } // Body
+            if(hangErrors >= 3) { ctx.beginPath(); ctx.moveTo(60,35); ctx.lineTo(50,45); ctx.stroke(); } // L Arm
+            if(hangErrors >= 4) { ctx.beginPath(); ctx.moveTo(60,35); ctx.lineTo(70,45); ctx.stroke(); } // R Arm
+            if(hangErrors >= 5) { ctx.beginPath(); ctx.moveTo(60,50); ctx.lineTo(50,65); ctx.stroke(); } // L Leg
+            if(hangErrors >= 6) { ctx.beginPath(); ctx.moveTo(60,50); ctx.lineTo(70,65); ctx.stroke(); } // R Leg
+        }
+
+        // --- TYPER APP ---
+        let typeStart = 0;
+        const typeSentences = [
+            "The quick brown fox jumps over the lazy dog.",
+            "System 6 is the best classic operating system.",
+            "Type as fast as you can to test your speed.",
+            "Macintosh computers changed the world forever."
+        ];
+        function initTyper() {
+            const s = typeSentences[Math.floor(Math.random() * typeSentences.length)];
+            document.getElementById('typer-target').innerText = s;
+            const inp = document.getElementById('typer-input');
+            inp.value = '';
+            inp.disabled = false;
+            inp.focus();
+            typeStart = 0;
+            document.getElementById('typer-wpm').innerText = 0;
+        }
+        function checkTyper() {
+            if(typeStart === 0) typeStart = Date.now();
+            const target = document.getElementById('typer-target').innerText;
+            const current = document.getElementById('typer-input').value;
+            
+            if(current === target) {
+                const time = (Date.now() - typeStart) / 1000 / 60; // mins
+                const wpm = Math.round((target.split(' ').length) / time);
+                document.getElementById('typer-wpm').innerText = wpm;
+                alert(`Finished! WPM: ${wpm}`);
+                document.getElementById('typer-input').disabled = true;
+            }
+        }
+
+        // --- REACTION GAME ---
+        let reactStart = 0, reactTimer;
+        function clickReaction() {
+            const box = document.getElementById('react-box');
+            if(box.style.backgroundColor === 'black') {
+                const diff = Date.now() - reactStart;
+                document.getElementById('react-best').innerText = diff;
+                box.style.backgroundColor = 'white';
+                box.style.color = 'black';
+                box.innerText = 'Click to Start';
+            } else if(box.innerText === 'Click to Start') {
+                box.innerText = 'Wait...';
+                const delay = 1000 + Math.random() * 2000;
+                reactTimer = setTimeout(() => {
+                    box.style.backgroundColor = 'black';
+                    box.style.color = 'white';
+                    box.innerText = 'CLICK!';
+                    reactStart = Date.now();
+                }, delay);
+            } else {
+                clearTimeout(reactTimer);
+                box.innerText = 'Too Early!';
+                setTimeout(() => box.innerText = 'Click to Start', 1000);
+            }
+        }
+
+        // --- ASCII APP ---
+        function initAscii() {
+            const list = document.getElementById('ascii-list');
+            if(list.innerHTML !== '') return;
+            for(let i=32; i<=126; i++) {
+                const row = document.createElement('div');
+                row.className = 'ascii-row';
+                row.innerHTML = `<span>${i}</span><span>${i.toString(16).toUpperCase()}</span><span>${String.fromCharCode(i)}</span>`;
+                list.appendChild(row);
+            }
+        }
+
+        // --- MAGIC 8 BALL ---
+        function ask8Ball() {
+            const answers = ["Yes", "No", "Maybe", "Ask Later", "Unlikely", "Certainly"];
+            const ans = answers[Math.floor(Math.random() * answers.length)];
+            document.getElementById('m8b-ans').innerText = ans;
+            playTone(100, 0.2);
+        }
+        
+        // --- COIN FLIP ---
+        function flipCoin() {
+            const el = document.getElementById('coin');
+            let i = 0;
+            const iv = setInterval(() => {
+                el.innerText = i%2===0 ? 'H' : 'T';
+                i++;
+                if(i > 10) {
+                    clearInterval(iv);
+                    el.innerText = Math.random() > 0.5 ? 'H' : 'T';
+                    playTone(400, 0.1);
+                }
+            }, 50);
+        }
+
+        // --- WORLD CLOCK ---
+        function updateWorldTime() {
+            const n=new Date();
+            document.getElementById('wc-ny').innerText=n.toLocaleTimeString('en-US',{timeZone:'America/New_York',hour:'2-digit',minute:'2-digit'}); 
+            document.getElementById('wc-ldn').innerText=n.toLocaleTimeString('en-GB',{timeZone:'Europe/London',hour:'2-digit',minute:'2-digit'}); 
+            document.getElementById('wc-tky').innerText=n.toLocaleTimeString('ja-JP',{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit'}); 
+            document.getElementById('wc-syd').innerText=n.toLocaleTimeString('en-AU',{timeZone:'Australia/Sydney',hour:'2-digit',minute:'2-digit'});
+        }
+
+        // --- GUESS GAME ---
+        let guessNum;
+        function initGuess() { guessNum = Math.floor(Math.random() * 100) + 1; document.getElementById('guess-msg').innerText = ""; document.getElementById('guess-input').value=""; }
+        function checkGuess() {
+            const g = parseInt(document.getElementById('guess-input').value);
+            const m = document.getElementById('guess-msg');
+            if(isNaN(g)) return;
+            if(g === guessNum) { m.innerText = "Correct!"; playTone(500,0.1); playTone(600,0.1); }
+            else if(g < guessNum) m.innerText = "Too Low";
+            else m.innerText = "Too High";
+        }
+
+        // --- RPS GAME ---
+        function playRPS(p) {
+            const c = ['Rock','Paper','Scissors'][Math.floor(Math.random()*3)];
+            let r = "Draw";
+            if((p=='Rock'&&c=='Scissors') || (p=='Paper'&&c=='Rock') || (p=='Scissors'&&c=='Paper')) r="You Win";
+            else if(p !== c) r="CPU Wins";
+            document.getElementById('rps-result').innerText = `You:${p} CPU:${c} - ${r}`;
+        }
+
+        // --- SPEECH APP ---
+        function speakText() {
+            const txt = document.getElementById('speak-text').value;
+            if(!txt) return;
+            const u = new SpeechSynthesisUtterance(txt);
+            window.speechSynthesis.speak(u);
+        }
+
+        // --- TIP CALC ---
+        function calcTip(pct) {
+            const bill = parseFloat(document.getElementById('tip-bill').value) || 0;
+            const split = parseInt(document.getElementById('tip-split').value) || 1;
+            const total = bill * (1 + pct);
+            const per = total / split;
+            document.getElementById('tip-out').innerText = '$' + per.toFixed(2);
+        }
+
+        // --- SLOTS GAME ---
+        function spinSlots() {
+            const syms = ['🍒','🔔','💎','7️⃣','🍇','🍋'];
+            const r1 = document.getElementById('slot1');
+            const r2 = document.getElementById('slot2');
+            const r3 = document.getElementById('slot3');
+            
+            let i = 0;
+            const spin = setInterval(() => {
+                r1.innerText = syms[Math.floor(Math.random()*syms.length)];
+                r2.innerText = syms[Math.floor(Math.random()*syms.length)];
+                r3.innerText = syms[Math.floor(Math.random()*syms.length)];
+                i++;
+                if(i > 10) {
+                    clearInterval(spin);
+                    if(r1.innerText === r2.innerText && r2.innerText === r3.innerText) {
+                        playTone(523, 0.2); setTimeout(()=>playTone(659, 0.2), 200);
+                        alert('JACKPOT!');
+                    }
+                }
+            }, 100);
+        }
+
+        // --- DICE ---
+        function rollDice() {
+            const faces = ['⚀','⚁','⚂','⚃','⚄','⚅'];
+            const out = document.getElementById('dice-out');
+            let i = 0;
+            const roll = setInterval(() => {
+                out.innerText = faces[Math.floor(Math.random()*6)];
+                i++;
+                if(i > 10) clearInterval(roll);
+            }, 50);
+        }
+
+        // --- CONVERTER APP ---
+        function runConvert() {
+            const type = document.getElementById('conv-type').value;
+            const val = parseFloat(document.getElementById('conv-input').value);
+            const out = document.getElementById('conv-output');
+            if(isNaN(val)) return;
+            
+            let res = 0;
+            if(type === 'km-mi') res = val * 0.621371;
+            if(type === 'mi-km') res = val / 0.621371;
+            if(type === 'kg-lb') res = val * 2.20462;
+            if(type === 'lb-kg') res = val / 2.20462;
+            if(type === 'c-f') res = (val * 9/5) + 32;
+            if(type === 'f-c') res = (val - 32) * 5/9;
+            
+            out.value = res.toFixed(2);
+        }
+
+        // --- EXPENSES APP ---
+        let expTotal = 0;
+        function addExpense() {
+            const item = document.getElementById('exp-item').value;
+            const cost = parseFloat(document.getElementById('exp-cost').value);
+            if(item && !isNaN(cost)) {
+                expTotal += cost;
+                const d = document.createElement('div');
+                d.style.display='flex'; d.style.justifyContent='space-between';
+                d.innerHTML = `<span>${item}</span><span>$${cost.toFixed(2)}</span>`;
+                document.getElementById('exp-list').appendChild(d);
+                document.getElementById('exp-total').innerText = expTotal.toFixed(2);
+                document.getElementById('exp-item').value = '';
+                document.getElementById('exp-cost').value = '';
+            }
+        }
+
+        // --- BMI APP ---
+        function calcBMI() {
+            const h = parseFloat(document.getElementById('bmi-h').value) / 100;
+            const w = parseFloat(document.getElementById('bmi-w').value);
+            if(h && w) {
+                const bmi = (w / (h*h)).toFixed(1);
+                document.getElementById('bmi-out').innerText = bmi;
+            }
+        }
+
+        // --- LOANS APP ---
+        function calcLoan() {
+            const p = parseFloat(document.getElementById('loan-amt').value);
+            const r = parseFloat(document.getElementById('loan-rate').value) / 100 / 12;
+            const n = parseFloat(document.getElementById('loan-term').value);
+            if(p && r && n) {
+                const pay = (p * r * Math.pow(1+r, n)) / (Math.pow(1+r, n) - 1);
+                document.getElementById('loan-out').innerText = '$' + pay.toFixed(2);
+            }
+        }
+
+        // --- CALENDAR APP ---
+        function renderCalendar() {
+            const date = new Date();
+            const year = date.getFullYear();
+            const month = date.getMonth();
+            document.getElementById('cal-title').innerText = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+            
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const grid = document.getElementById('cal-grid');
+            grid.innerHTML = '';
+            
+            ['S','M','T','W','T','F','S'].forEach(d => {
+                const el = document.createElement('div');
+                el.className = 'cal-cell cal-header'; el.innerText = d; grid.appendChild(el);
+            });
+            for(let i=0; i<firstDay; i++) {
+                const el = document.createElement('div'); el.className = 'cal-cell'; grid.appendChild(el);
+            }
+            for(let i=1; i<=daysInMonth; i++) {
+                const el = document.createElement('div');
+                el.className = 'cal-cell' + (i === date.getDate() ? ' cal-today' : '');
+                el.innerText = i;
+                grid.appendChild(el);
+            }
+        }
+
+        // --- CHECKLIST APP ---
+        function addChecklistItem() {
+            const input = document.getElementById('cl-input');
+            const txt = input.value.trim();
+            if(!txt) return;
+            const div = document.createElement('div');
+            div.style.display = 'flex'; div.style.alignItems='center'; div.style.marginBottom='2px';
+            div.innerHTML = `<input type="checkbox" style="margin-right:5px;"><span>${txt}</span>`;
+            div.querySelector('input').onclick = function() { this.nextElementSibling.style.textDecoration = this.checked ? 'line-through' : 'none'; };
+            document.getElementById('cl-list').appendChild(div);
+            input.value = '';
+        }
+
+        // --- TIMER APP ---
+        let tmrInt, tmrDur;
+        function runTimer() {
+            clearInterval(tmrInt);
+            const m = parseInt(document.getElementById('timer-min').value) || 0;
+            const s = parseInt(document.getElementById('timer-sec').value) || 0;
+            let total = m*60 + s;
+            tmrDur = total;
+            
+            tmrInt = setInterval(() => {
+                if(total <= 0) {
+                    clearInterval(tmrInt); playTone(400, 1); alert('Time Up!');
+                } else {
+                    total--;
+                    const min = Math.floor(total/60).toString().padStart(2,'0');
+                    const sec = (total%60).toString().padStart(2,'0');
+                    document.getElementById('timer-display').innerText = `${min}:${sec}`;
+                    document.getElementById('timer-bar').style.width = ((tmrDur-total)/tmrDur)*100 + '%';
+                }
+            }, 1000);
+        }
+
+        // --- BLACKJACK GAME ---
+        let bjDeck, bjPlayer, bjDealer;
+        function initBlackjack() {
+            bjDeck = [];
+            const suits = ['♠','♥','♦','♣'];
+            const ranks = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+            for(let s of suits) for(let r of ranks) bjDeck.push({r,s,val: bjVal(r)});
+            bjDeck.sort(() => Math.random() - 0.5);
+            
+            bjPlayer = [bjDeck.pop(), bjDeck.pop()];
+            bjDealer = [bjDeck.pop(), bjDeck.pop()];
+            
+            renderBJ(false);
+        }
+        function bjVal(r) {
+            if(['J','Q','K'].includes(r)) return 10;
+            if(r==='A') return 11;
+            return parseInt(r);
+        }
+        function getScore(hand) {
+            let s = hand.reduce((a,c) => a+c.val, 0);
+            let aces = hand.filter(c => c.r==='A').length;
+            while(s > 21 && aces > 0) { s -= 10; aces--; }
+            return s;
+        }
+        function renderBJ(showDealer) {
+            const pc = document.getElementById('bj-player-cards');
+            const dc = document.getElementById('bj-dealer-cards');
+            pc.innerHTML = ''; dc.innerHTML = '';
+            
+            bjPlayer.forEach(c => pc.appendChild(createCard(c)));
+            bjDealer.forEach((c,i) => {
+                if(i===0 && !showDealer) {
+                    const back = document.createElement('div');
+                    back.className = 'card';
+                    back.style.background = 'black';
+                    dc.appendChild(back);
+                } else {
+                    dc.appendChild(createCard(c));
+                }
+            });
+            document.getElementById('bj-p-score').innerText = getScore(bjPlayer);
+            document.getElementById('bj-d-score').innerText = showDealer ? getScore(bjDealer) : '?';
+        }
+        function createCard(c) {
+            const el = document.createElement('div');
+            el.className = 'card' + (['♥','♦'].includes(c.s) ? ' suit-red' : '');
+            el.innerText = c.r + c.s;
+            return el;
+        }
+        function bjHit() {
+            bjPlayer.push(bjDeck.pop());
+            renderBJ(false);
+            if(getScore(bjPlayer) > 21) setTimeout(() => alert('Bust! You Lose.'), 100);
+        }
+        function bjStand() {
+            let ds = getScore(bjDealer);
+            while(ds < 17) {
+                bjDealer.push(bjDeck.pop());
+                ds = getScore(bjDealer);
+            }
+            renderBJ(true);
+            const ps = getScore(bjPlayer);
+            if(ds > 21 || ps > ds) alert('You Win!');
+            else if(ds === ps) alert('Push.');
+            else alert('Dealer Wins.');
+        }
+
+        // --- SIMON GAME ---
+        let simonSeq = [], simonStep = 0, simonTurn = false;
+        function initSimon() {
+            simonSeq = [];
+            nextRound();
+        }
+        function nextRound() {
+            simonSeq.push(Math.floor(Math.random() * 4));
+            playSeq();
+        }
+        function playSeq() {
+            simonTurn = false;
+            let i = 0;
+            const iv = setInterval(() => {
+                flashBtn(simonSeq[i]);
+                i++;
+                if(i >= simonSeq.length) {
+                    clearInterval(iv);
+                    simonTurn = true;
+                    simonStep = 0;
+                }
+            }, 800);
+        }
+        function flashBtn(id) {
+            const el = document.getElementById('s-'+id);
+            el.classList.add('active');
+            const freqs = [200, 300, 400, 500];
+            playTone(freqs[id], 0.3);
+            setTimeout(() => el.classList.remove('active'), 400);
+        }
+        function simonInput(id) {
+            if(!simonTurn) return;
+            flashBtn(id);
+            if(id === simonSeq[simonStep]) {
+                simonStep++;
+                if(simonStep >= simonSeq.length) setTimeout(nextRound, 1000);
+            } else {
+                alert('Game Over! Score: ' + simonSeq.length);
+            }
+        }
+
+        // --- MOLE GAME ---
+        let moleScore = 0, moleTimer;
+        function initMole() {
+            moleScore = 0;
+            document.getElementById('mole-score').innerText = 0;
+            const grid = document.getElementById('mole-grid');
+            grid.innerHTML = '';
+            for(let i=0; i<9; i++) {
+                const d = document.createElement('div');
+                d.className = 'mole-hole';
+                d.onclick = () => hitMole(d);
+                grid.appendChild(d);
+            }
+            clearInterval(moleTimer);
+            moleTimer = setInterval(popMole, 800);
+        }
+        function popMole() {
+            const holes = document.querySelectorAll('.mole-hole');
+            holes.forEach(h => h.classList.remove('active'));
+            const r = Math.floor(Math.random() * holes.length);
+            holes[r].classList.add('active');
+        }
+        function hitMole(el) {
+            if(el.classList.contains('active')) {
+                moleScore++;
+                document.getElementById('mole-score').innerText = moleScore;
+                el.classList.remove('active');
+                playTone(600, 0.1);
+            }
+        }
+
+        // --- BREAKOUT GAME ---
+        let boCtx, boBall, boPaddle, boBricks, boInterval;
+        function initBreakout() {
+            const c = document.getElementById('breakoutCanvas'); if(!c) return;
+            boCtx = c.getContext('2d');
+            boBall = {x:120, y:200, dx:3, dy:-3, r:4};
+            boPaddle = {x:100, w:50, h:5};
+            boBricks = [];
+            for(let r=0; r<5; r++) for(let c=0; c<6; c++) boBricks.push({x:c*40+2, y:r*15+20, w:36, h:10, active:true});
+            c.onmousemove = (e) => { const rect=c.getBoundingClientRect(); boPaddle.x = e.clientX - rect.left - 25; };
+            if(boInterval) clearInterval(boInterval);
+            boInterval = setInterval(boLoop, 20);
+        }
+        function boLoop() {
+            boCtx.fillStyle='white'; boCtx.fillRect(0,0,240,300);
+            boCtx.fillStyle='black';
+            boBall.x += boBall.dx; boBall.y += boBall.dy;
+            if(boBall.x<0 || boBall.x>240) boBall.dx *= -1;
+            if(boBall.y<0) boBall.dy *= -1;
+            if(boBall.y>300) { clearInterval(boInterval); alert('Game Over'); }
+            if(boBall.y+boBall.r > 280 && boBall.x > boPaddle.x && boBall.x < boPaddle.x+boPaddle.w) boBall.dy *= -1;
+            boCtx.fillRect(boPaddle.x, 280, boPaddle.w, boPaddle.h);
+            boBricks.forEach(b => {
+                if(!b.active) return;
+                boCtx.fillRect(b.x, b.y, b.w, b.h);
+                if(boBall.x > b.x && boBall.x < b.x+b.w && boBall.y > b.y && boBall.y < b.y+b.h) {
+                    b.active=false; boBall.dy *= -1;
+                }
+            });
+            boCtx.beginPath(); boCtx.arc(boBall.x, boBall.y, boBall.r, 0, Math.PI*2); boCtx.fill();
+        }
+
+        // --- TIC TAC TOE ---
+        let tttBoard = [], tttTurn = 'X';
+        function initTTT() {
+            tttBoard = Array(9).fill(null);
+            tttTurn = 'X';
+            renderTTT();
+        }
+        function renderTTT() {
+            const g = document.getElementById('ttt-board'); g.innerHTML='';
+            tttBoard.forEach((v,i) => {
+                const d = document.createElement('div');
+                d.className = 'ttt-cell';
+                d.innerText = v || '';
+                d.onclick = () => playTTT(i);
+                g.appendChild(d);
+            });
+            document.getElementById('ttt-status').innerText = `Turn: ${tttTurn}`;
+        }
+        function playTTT(i) {
+            if(tttBoard[i]) return;
+            tttBoard[i] = tttTurn;
+            if(checkTTTWin()) { alert(tttTurn + ' Wins!'); initTTT(); return; }
+            tttTurn = tttTurn==='X' ? 'O' : 'X';
+            renderTTT();
+            if(tttTurn === 'O') setTimeout(cpuTTT, 500);
+        }
+        function cpuTTT() {
+            const empty = tttBoard.map((v,i)=>v===null?i:null).filter(v=>v!==null);
+            if(empty.length>0) {
+                const move = empty[Math.floor(Math.random()*empty.length)];
+                playTTT(move);
+            }
+        }
+        function checkTTTWin() {
+            const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+            return wins.some(c => tttBoard[c[0]] && tttBoard[c[0]]===tttBoard[c[1]] && tttBoard[c[0]]===tttBoard[c[2]]);
+        }
+
+        // --- STOPWATCH ---
+        let swInterval, swTime = 0;
+        function startWatch() {
+            const btn = document.querySelector('#stopwatch .btn');
+            if(swInterval) {
+                clearInterval(swInterval); swInterval = null;
+                btn.innerText = 'Start';
+            } else {
+                const start = Date.now() - swTime;
+                swInterval = setInterval(() => {
+                    swTime = Date.now() - start;
+                    const d = new Date(swTime);
+                    const m = d.getUTCHours()*60 + d.getUTCMinutes();
+                    const s = d.getUTCSeconds();
+                    const ms = Math.floor(d.getUTCMilliseconds()/10);
+                    document.getElementById('stopwatch-display').innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}:${ms.toString().padStart(2,'0')}`;
+                }, 50);
+                btn.innerText = 'Stop';
+            }
+        }
+
+        // --- CALCULATOR ---
+        let calcStr=""; 
+        function calc(v){ 
+            const d=document.getElementById('calc-display'); 
+            if(v==='C'){calcStr="";d.value="0"}
+            else if(v==='='){try{calcStr=eval(calcStr).toString();d.value=calcStr}catch{d.value="Error";calcStr=""}}
+            else{calcStr+=v;d.value=calcStr}
+        }
+        window.addEventListener('keydown', (e)=>{
+            if(document.getElementById('calculator').classList.contains('visible')){
+                if(e.key >= '0' && e.key <= '9' || ['+','-','*','/','.'].includes(e.key)) calc(e.key);
+                if(e.key === 'Enter') calc('=');
+                if(e.key === 'Backspace' || e.key === 'Escape') calc('C');
+            }
+        });
+
+        // --- PAINT ---
+        let paintC, pCtxMain, painting=false, paintColor='black', paintTool='pencil';
+        function setPaintColor(c) { 
+            paintColor = (c === 'pattern') ? createPattern() : c;
+            document.querySelectorAll('.color-swatch').forEach(el=>el.classList.remove('active')); 
+            event.target.classList.add('active'); 
+        }
+        function setTool(t) {
+            paintTool = t;
+            document.querySelectorAll('.tool-btn').forEach(el=>el.classList.remove('active'));
+            document.getElementById('tool-'+t).classList.add('active');
+        }
+        function createPattern() {
+            const canvas = document.createElement('canvas'); canvas.width=4; canvas.height=4;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#fff'; ctx.fillRect(0,0,4,4);
+            ctx.fillStyle = '#000'; ctx.fillRect(0,0,2,2); ctx.fillRect(2,2,2,2);
+            return pCtxMain ? pCtxMain.createPattern(canvas, 'repeat') : 'black';
+        }
+        function clearCanvas() { if(pCtxMain) pCtxMain.clearRect(0,0,300,200); }
+        
+        function floodFill(x, y, fillColor) {
+            const imgData = pCtxMain.getImageData(0,0,300,200);
+            const data = imgData.data;
+            const targetColor = getPixel(imgData, x, y);
+            
+            if(typeof paintColor !== 'string') return;
+            
+            let fillR=0, fillG=0, fillB=0;
+            if(paintColor === 'white') { fillR=255; fillG=255; fillB=255; }
+            
+            if(colorsMatch(targetColor, [fillR, fillG, fillB, 255])) return;
+
+            const stack = [[x, y]];
+            while(stack.length) {
+                const [cx, cy] = stack.pop();
+                const idx = (cy * 300 + cx) * 4;
+                
+                if(cx >= 0 && cx < 300 && cy >= 0 && cy < 200 && colorsMatch(getPixel(imgData, cx, cy), targetColor)) {
+                    setPixel(imgData, idx, fillR, fillG, fillB);
+                    stack.push([cx+1, cy]);
+                    stack.push([cx-1, cy]);
+                    stack.push([cx, cy+1]);
+                    stack.push([cx, cy-1]);
+                }
+            }
+            pCtxMain.putImageData(imgData, 0, 0);
+        }
+        function getPixel(imgData, x, y) {
+            const i = (y * 300 + x) * 4;
+            return [imgData.data[i], imgData.data[i+1], imgData.data[i+2], imgData.data[i+3]];
+        }
+        function setPixel(imgData, i, r, g, b) {
+            imgData.data[i] = r; imgData.data[i+1] = g; imgData.data[i+2] = b; imgData.data[i+3] = 255;
+        }
+        function colorsMatch(c1, c2) { return c1[0]===c2[0] && c1[1]===c2[1] && c1[2]===c2[2]; }
+
+        function drawPaint(e){ 
+            if(!pCtxMain) return;
+            const r = paintC.getBoundingClientRect();
+            const x = Math.floor(e.clientX - r.left);
+            const y = Math.floor(e.clientY - r.top);
+            
+            if(paintTool === 'fill') {
+                if(e.type === 'mousedown') floodFill(x, y, paintColor);
+                return;
+            }
+            
+            if(!painting) return;
+            pCtxMain.fillStyle = paintColor;
+            pCtxMain.lineWidth = 2;
+            pCtxMain.strokeStyle = paintColor;
+            pCtxMain.lineCap = 'square';
+            
+            pCtxMain.lineTo(x, y);
+            pCtxMain.stroke();
+            pCtxMain.beginPath();
+            pCtxMain.moveTo(x, y);
+        }
+
+        // --- TETRIS (BLOCKS) ---
+        let tCtx, tInterval, tScore=0;
+        const ROW=15, COL=10, SQ=20;
+        let board = [], piece = null;
+        
+        function tetroZ(){ return [[1,1,0],[0,1,1],[0,0,0]]; }
+        function tetroS(){ return [[0,1,1],[1,1,0],[0,0,0]]; }
+        function tetroT(){ return [[0,1,0],[1,1,1],[0,0,0]]; }
+        function tetroO(){ return [[1,1],[1,1]]; }
+        function tetroL(){ return [[0,0,1],[1,1,1],[0,0,0]]; }
+        function tetroI(){ return [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]]; }
+        function tetroJ(){ return [[1,0,0],[1,1,1],[0,0,0]]; }
+
+        const PIECES = [
+            [tetroZ, "black"], [tetroS, "black"], [tetroT, "black"], [tetroO, "black"], [tetroL, "black"], [tetroI, "black"], [tetroJ, "black"]
+        ];
+
+        function initBlocks() { 
+            const cvs=document.getElementById('blocksCanvas'); if(!cvs) return;
+            tCtx=cvs.getContext('2d');
+            board = Array.from({length:ROW}, () => Array(COL).fill('VACANT'));
+            tScore=0;
+            updateTScore();
+            piece = randomPiece();
+            clearInterval(tInterval);
+            tInterval = setInterval(dropPiece, 500); 
+            drawBoard();
+        }
+        function randomPiece(){
+            let r = Math.floor(Math.random() * PIECES.length);
+            return { active: PIECES[r][0](), color: PIECES[r][1], x: 3, y: -2 };
+        }
+        function drawSquare(x,y,color){
+            tCtx.fillStyle = color === 'VACANT' ? 'white' : 'black';
+            tCtx.fillRect(x*SQ,y*SQ,SQ,SQ);
+            tCtx.strokeStyle = 'black';
+            tCtx.strokeRect(x*SQ,y*SQ,SQ,SQ);
+            if(color!=='VACANT'){
+                tCtx.fillStyle = 'white'; tCtx.fillRect(x*SQ+4,y*SQ+4,4,4);
+            }
+        }
+        function drawBoard(){
+            for(let r=0; r<ROW; r++) for(let c=0; c<COL; c++) drawSquare(c,r,board[r][c]);
+            if(piece) drawPiece();
+        }
+        function drawPiece(){
+            piece.active.forEach((row, r) => {
+                row.forEach((val, c) => {
+                    if(val) drawSquare(piece.x+c, piece.y+r, piece.color);
+                });
+            });
+        }
+        function dropPiece(){
+            if(!piece) return;
+            if(!collision(0,1,piece.active)){
+                piece.y++;
+                drawBoard();
+            } else {
+                lock();
+                piece = randomPiece();
+            }
+        }
+        function collision(x,y,p){
+            for(let r=0; r<p.length; r++){
+                for(let c=0; c<p.length; c++){
+                    if(!p[r][c]) continue;
+                    let newX = piece.x + c + x;
+                    let newY = piece.y + r + y;
+                    if(newX < 0 || newX >= COL || newY >= ROW) return true;
+                    if(newY < 0) continue; 
+                    if(board[newY][newX] !== 'VACANT') return true;
+                }
+            }
+            return false;
+        }
+        function lock(){
+            piece.active.forEach((row, r) => {
+                row.forEach((val, c) => {
+                    if(!val) return;
+                    if(piece.y+r < 0) { clearInterval(tInterval); alert('Game Over'); return; }
+                    board[piece.y+r][piece.x+c] = piece.color;
+                });
+            });
+            for(let r=0; r<ROW; r++){
+                let isFull = true;
+                for(let c=0; c<COL; c++) if(board[r][c] === 'VACANT') isFull = false;
+                if(isFull){
+                    for(let y=r; y>1; y--) for(let c=0; c<COL; c++) board[y][c] = board[y-1][c];
+                    for(let c=0; c<COL; c++) board[0][c] = 'VACANT';
+                    tScore+=10; updateTScore();
+                }
+            }
+            drawBoard();
+        }
+        function rotatePiece(){
+            let nextPattern = piece.active[0].map((val, index) => piece.active.map(row => row[index]).reverse());
+            if(!collision(0,0,nextPattern)) piece.active = nextPattern;
+            drawBoard();
+        }
+        function updateTScore() { document.getElementById('tetris-score').innerText = tScore; }
+
+        // --- PONG ---
+        let pCtx, pBall, pP1Y, pP2Y, pInterval, pScoreP=0, pScoreC=0;
+        function initPong() { 
+            const c=document.getElementById('pongCanvas'); if(!c) return; pCtx=c.getContext('2d');
+            pBall={x:150,y:100,dx:3,dy:3}; pP1Y=80; pP2Y=80; pScoreP=0; pScoreC=0;
+            updatePongScore();
+            c.onmousemove = (e) => { const r=c.getBoundingClientRect(); pP1Y = e.clientY - r.top - 20; };
+            clearInterval(pInterval); pInterval=setInterval(pongLoop, 16); 
+        }
+        function pongLoop() {
+            pBall.x += pBall.dx; pBall.y += pBall.dy;
+            if(pBall.y<0 || pBall.y>200) pBall.dy *= -1;
+            if(pBall.x < 10) {
+                if(pBall.y > pP1Y && pBall.y < pP1Y+40) { pBall.dx*=-1.1; }
+                else { pScoreC++; resetBall(); updatePongScore(); }
+            }
+            if(pBall.x > 290) {
+                if(pBall.y > pP2Y && pBall.y < pP2Y+40) { pBall.dx*=-1.1; }
+                else { pScoreP++; resetBall(); updatePongScore(); }
+            }
+            let target = pBall.y - 20;
+            pP2Y += (target - pP2Y) * 0.08; 
+            drawPong();
+        }
+        function resetBall() { pBall.x=150; pBall.y=100; pBall.dx=3 * (Math.random()>.5?1:-1); pBall.dy=3 * (Math.random()>.5?1:-1); }
+        function updatePongScore() { 
+            document.getElementById('pong-p-score').innerText = pScoreP; 
+            document.getElementById('pong-c-score').innerText = pScoreC;
+            if(pScoreP >= 5 || pScoreC >= 5) {
+                clearInterval(pInterval);
+                alert(pScoreP >= 5 ? 'You Win!' : 'You Lose!');
+            }
+        }
+        function drawPong() {
+            pCtx.fillStyle='black'; pCtx.fillRect(0,0,300,200);
+            pCtx.fillStyle='white'; 
+            pCtx.fillRect(0, pP1Y, 5, 40); 
+            pCtx.fillRect(295, pP2Y, 5, 40); 
+            pCtx.fillRect(pBall.x, pBall.y, 6, 6); 
+            for(let i=0; i<200; i+=20) pCtx.fillRect(149, i, 2, 10);
+        }
+
+        // --- MINESWEEPER ---
+        let mines=[], revealed=[], flags=[], mineOver=false, mTime=0, mInterval;
+        function initMines() {
+            mines=Array(64).fill(0); revealed=Array(64).fill(false); flags=Array(64).fill(false); mineOver=false; mTime=0;
+            document.getElementById('mine-face').innerText = "😮";
+            document.getElementById('mine-timer').innerText = "000";
+            clearInterval(mInterval);
+            mInterval = setInterval(()=>{mTime++; document.getElementById('mine-timer').innerText=mTime.toString().padStart(3,'0')}, 1000);
+            
+            let placed=0;
+            while(placed<10){
+                let i=Math.floor(Math.random()*64);
+                if(mines[i]!==-1){mines[i]=-1; placed++;}
+            }
+            for(let i=0; i<64; i++){
+                if(mines[i]===-1) continue;
+                let c=0, r=Math.floor(i/8), col=i%8;
+                for(let dr=-1; dr<=1; dr++) for(let dc=-1; dc<=1; dc++){
+                    let nr=r+dr, nc=col+dc;
+                    if(nr>=0 && nr<8 && nc>=0 && nc<8 && mines[nr*8+nc]===-1) c++;
+                }
+                mines[i]=c;
+            }
+            renderMines();
+        }
+        function renderMines() {
+            const g=document.getElementById('mine-field'); g.innerHTML='';
+            for(let i=0; i<64; i++){
+                const d=document.createElement('div');
+                d.className='mine-cell' + (revealed[i]?' revealed':'');
+                if(revealed[i]) {
+                    if(mines[i]===-1) { d.innerText='💣'; d.style.background='black'; d.style.color='white'; }
+                    else if(mines[i]>0) d.innerText=mines[i];
+                } else if(flags[i]) {
+                    d.innerText='🚩';
+                }
+                d.onmousedown = (e) => {
+                    if(mineOver) return;
+                    if(e.button===2) { flags[i]=!flags[i]; renderMines(); }
+                    else if(!flags[i]) clickMine(i);
+                };
+                g.appendChild(d);
+            }
+        }
+        function clickMine(i) {
+            if(revealed[i]) return;
+            revealed[i]=true;
+            if(mines[i]===-1) {
+                mineOver=true; clearInterval(mInterval);
+                document.getElementById('mine-face').innerText = "😵";
+                renderMines();
+            } else {
+                if(mines[i]===0) {
+                    let q=[i], visited=new Set([i]);
+                    while(q.length){
+                        let curr=q.pop();
+                        let r=Math.floor(curr/8), c=curr%8;
+                        for(let dr=-1; dr<=1; dr++) for(let dc=-1; dc<=1; dc++){
+                            let nr=r+dr, nc=c+dc, idx=nr*8+nc;
+                            if(nr>=0&&nr<8&&nc>=0&&nc<8&&!visited.has(idx)&&mines[idx]!==-1){
+                                visited.add(idx); revealed[idx]=true;
+                                if(mines[idx]===0) q.push(idx);
+                            }
+                        }
+                    }
+                }
+                checkWin();
+                renderMines();
+            }
+        }
+        function checkWin() {
+            let win=true;
+            for(let i=0; i<64; i++) if(mines[i]!==-1 && !revealed[i]) win=false;
+            if(win) { mineOver=true; clearInterval(mInterval); document.getElementById('mine-face').innerText="😎"; }
+        }
+
+        // --- SNAKE ---
+        let sCtx, snake=[], sDir, sFood, sInterval, sScore=0;
+        let sQueue = []; 
+        function initSnake() {
+            const c=document.getElementById('snakeCanvas'); if(!c) return; sCtx=c.getContext('2d');
+            snake=[{x:10,y:10}]; sDir={x:1,y:0}; sQueue=[]; sScore=0; placeFood();
+            document.getElementById('snake-score').innerText = sScore;
+            clearInterval(sInterval); sInterval=setInterval(snakeLoop, 100);
+        }
+        function placeFood(){ sFood={x:Math.floor(Math.random()*20),y:Math.floor(Math.random()*20)}; }
+        function snakeLoop() {
+            if(sQueue.length) {
+                const next = sQueue.shift();
+                if((next.x!==0 && sDir.x===0) || (next.y!==0 && sDir.y===0)) sDir=next;
+            }
+            const head={x:snake[0].x+sDir.x, y:snake[0].y+sDir.y};
+            if(head.x<0||head.x>=20||head.y<0||head.y>=20||snake.some(s=>s.x===head.x&&s.y===head.y)){
+                clearInterval(sInterval); alert('Game Over'); return;
+            }
+            snake.unshift(head);
+            if(head.x===sFood.x && head.y===sFood.y) { sScore++; document.getElementById('snake-score').innerText=sScore; placeFood(); }
+            else snake.pop();
+            
+            sCtx.fillStyle='white'; sCtx.fillRect(0,0,200,200);
+            sCtx.fillStyle='black';
+            snake.forEach(s=>sCtx.fillRect(s.x*10, s.y*10, 9, 9));
+            sCtx.strokeStyle='black'; sCtx.lineWidth=2;
+            sCtx.strokeRect(sFood.x*10+1, sFood.y*10+1, 7, 7);
+        }
+
+        // --- PUZZLE (Existing Logic Fine) ---
+        let puzState = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,null];
+        function initPuzzle() {
+            let emptyIdx = 15;
+            for(let i=0; i<100; i++){
+                const neighbors = [];
+                if(emptyIdx%4>0) neighbors.push(emptyIdx-1);
+                if(emptyIdx%4<3) neighbors.push(emptyIdx+1);
+                if(emptyIdx>=4) neighbors.push(emptyIdx-4);
+                if(emptyIdx<12) neighbors.push(emptyIdx+4);
+                const rand = neighbors[Math.floor(Math.random()*neighbors.length)];
+                puzState[emptyIdx] = puzState[rand];
+                puzState[rand] = null;
+                emptyIdx = rand;
+            }
+            renderPuzzle();
+        }
+        function renderPuzzle() {
+            const g=document.getElementById('puzzle-grid'); g.innerHTML='';
+            puzState.forEach((val, i)=>{
+                const d=document.createElement('div');
+                d.className='puzzle-tile'+(val===null?' empty':'');
+                d.innerText=val||'';
+                d.onclick=()=>movePuzzle(i);
+                g.appendChild(d);
+            });
+        }
+        function movePuzzle(i) {
+            const e=puzState.indexOf(null);
+            const d=Math.abs(i-e);
+            if((d===1 && Math.floor(i/4)===Math.floor(e/4)) || d===4) {
+                puzState[e]=puzState[i]; puzState[i]=null; renderPuzzle();
+            }
+        }
+
+        // --- CONTROL PANEL ---
+        function setPattern(type) {
+            const body = document.body;
+            body.className = ''; 
+            if(type === 'dither') body.style.backgroundImage = "radial-gradient(#000 15%, transparent 16%), radial-gradient(#000 15%, transparent 16%)";
+            if(type === 'check') body.style.backgroundImage = "repeating-linear-gradient(45deg, #000 0, #000 2px, #fff 0, #fff 4px)";
+            if(type === 'white') { body.style.backgroundImage = 'none'; body.style.backgroundColor = 'white'; }
+        }
+
+        // --- MEMORY / PAIRS GAME ---
+        let memCards = [], memFlipped = [], memMatched = [];
+        function initMemory() {
+            const icons = ['A','B','C','D','E','F','G','H'];
+            memCards = [...icons, ...icons].sort(() => Math.random() - 0.5);
+            memFlipped = []; memMatched = []; renderMemory();
+        }
+        function renderMemory() {
+            const g = document.getElementById('memory-grid'); g.innerHTML = '';
+            memCards.forEach((val, i) => {
+                const d = document.createElement('div');
+                d.className = 'memory-card' + (memFlipped.includes(i) ? ' flipped' : '') + (memMatched.includes(i) ? ' matched' : '');
+                if(memFlipped.includes(i)) d.innerText = val;
+                d.onclick = () => flipCard(i);
+                g.appendChild(d);
+            });
+        }
+        function flipCard(i) {
+            if(memFlipped.length >= 2 || memFlipped.includes(i) || memMatched.includes(i)) return;
+            memFlipped.push(i); renderMemory();
+            if(memFlipped.length === 2) {
+                setTimeout(() => {
+                    if(memCards[memFlipped[0]] === memCards[memFlipped[1]]) memMatched.push(...memFlipped);
+                    memFlipped = []; renderMemory();
+                }, 1000);
+            }
+        }
+        
+        // --- LIFE GAME ---
+        let lCtx, lGrid=[], lCols=25, lRows=20, lInt;
+        function initLife() {
+            const c=document.getElementById('lifeCanvas'); if(!c) return; lCtx=c.getContext('2d');
+            lGrid = Array(lRows).fill().map(() => Array(lCols).fill(0));
+            drawLife();
+            c.onclick = (e) => {
+                const r=c.getBoundingClientRect(); 
+                const x=Math.floor((e.clientX-r.left)/10), y=Math.floor((e.clientY-r.top)/10);
+                if(x>=0&&x<lCols&&y>=0&&y<lRows) { lGrid[y][x]=!lGrid[y][x]; drawLife(); }
+            };
+        }
+        function toggleLife() {
+            if(lInt) { clearInterval(lInt); lInt=null; }
+            else lInt = setInterval(stepLife, 200);
+        }
+        function stepLife() {
+            let next = lGrid.map(arr => [...arr]);
+            for(let y=0;y<lRows;y++) for(let x=0;x<lCols;x++) {
+                let n=0;
+                for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++) {
+                    if(dx===0&&dy===0) continue;
+                    let ny=y+dy, nx=x+dx;
+                    if(ny>=0&&ny<lRows&&nx>=0&&nx<lCols&&lGrid[ny][nx]) n++;
+                }
+                if(lGrid[y][x]) next[y][x] = (n===2||n===3) ? 1 : 0;
+                else next[y][x] = (n===3) ? 1 : 0;
+            }
+            lGrid = next; drawLife();
+        }
+        function drawLife() {
+            lCtx.fillStyle='white'; lCtx.fillRect(0,0,250,200); lCtx.fillStyle='black';
+            for(let y=0;y<lRows;y++) for(let x=0;x<lCols;x++) if(lGrid[y][x]) lCtx.fillRect(x*10,y*10,9,9);
+            lCtx.strokeStyle='#ddd'; lCtx.beginPath();
+            for(let y=0;y<=lRows;y++){lCtx.moveTo(0,y*10);lCtx.lineTo(250,y*10);}
+            for(let x=0;x<=lCols;x++){lCtx.moveTo(x*10,0);lCtx.lineTo(x*10,200);}
+            lCtx.stroke();
+        }
+        function clearLife() { clearInterval(lInt); lInt=null; initLife(); }
+
+        // --- MAZE GAME ---
+        let mCtx, mSize=20, mRows, mCols, mGrid, mPlayer, mEnd;
+        function initMaze() {
+            const c=document.getElementById('mazeCanvas'); if(!c) return; mCtx=c.getContext('2d');
+            mCols=Math.floor(c.width/mSize); mRows=Math.floor(c.height/mSize);
+            mGrid=[]; for(let r=0;r<mRows;r++) { mGrid[r]=[]; for(let c=0;c<mCols;c++) mGrid[r][c]={t:1,r:1,b:1,l:1,v:0}; }
+            // Gen maze DFS
+            let stack=[{r:0,c:0}]; mGrid[0][0].v=1;
+            while(stack.length){
+                let cur=stack[stack.length-1], n=[];
+                if(cur.r>0 && !mGrid[cur.r-1][cur.c].v) n.push(0); // T
+                if(cur.c<mCols-1 && !mGrid[cur.r][cur.c+1].v) n.push(1); // R
+                if(cur.r<mRows-1 && !mGrid[cur.r+1][cur.c].v) n.push(2); // B
+                if(cur.c>0 && !mGrid[cur.r][cur.c-1].v) n.push(3); // L
+                if(n.length){
+                    let dir=n[Math.floor(Math.random()*n.length)];
+                    if(dir===0){ mGrid[cur.r][cur.c].t=0; mGrid[cur.r-1][cur.c].b=0; stack.push({r:cur.r-1,c:cur.c}); mGrid[cur.r-1][cur.c].v=1; }
+                    else if(dir===1){ mGrid[cur.r][cur.c].r=0; mGrid[cur.r][cur.c+1].l=0; stack.push({r:cur.r,c:cur.c+1}); mGrid[cur.r][cur.c+1].v=1; }
+                    else if(dir===2){ mGrid[cur.r][cur.c].b=0; mGrid[cur.r+1][cur.c].t=0; stack.push({r:cur.r+1,c:cur.c}); mGrid[cur.r+1][cur.c].v=1; }
+                    else if(dir===3){ mGrid[cur.r][cur.c].l=0; mGrid[cur.r][cur.c-1].r=0; stack.push({r:cur.r,c:cur.c-1}); mGrid[cur.r][cur.c-1].v=1; }
+                } else stack.pop();
+            }
+            mPlayer={r:0,c:0}; mEnd={r:mRows-1,c:mCols-1};
+            drawMaze();
+        }
+        function drawMaze() {
+            mCtx.fillStyle='white'; mCtx.fillRect(0,0,250,200);
+            mCtx.lineWidth=2; mCtx.strokeStyle='black';
+            for(let r=0;r<mRows;r++) for(let c=0;c<mCols;c++) {
+                let x=c*mSize, y=r*mSize;
+                mCtx.beginPath();
+                if(mGrid[r][c].t) { mCtx.moveTo(x,y); mCtx.lineTo(x+mSize,y); }
+                if(mGrid[r][c].r) { mCtx.moveTo(x+mSize,y); mCtx.lineTo(x+mSize,y+mSize); }
+                if(mGrid[r][c].b) { mCtx.moveTo(x,y+mSize); mCtx.lineTo(x+mSize,y+mSize); }
+                if(mGrid[r][c].l) { mCtx.moveTo(x,y); mCtx.lineTo(x,y+mSize); }
+                mCtx.stroke();
+            }
+            mCtx.fillStyle='black'; mCtx.beginPath(); mCtx.arc(mPlayer.c*mSize+mSize/2, mPlayer.r*mSize+mSize/2, 4, 0, Math.PI*2); mCtx.fill();
+            mCtx.fillStyle='#aaa'; mCtx.fillRect(mEnd.c*mSize+2, mEnd.r*mSize+2, mSize-4, mSize-4);
+        }
+        
+        // --- VIDEO POKER ---
+        let vpDeck=[], vpHand=[], vpCredits=100, vpBet=1, vpState='deal';
+        function initVideoPoker() {
+            vpCredits=100; vpBet=1; vpState='deal';
+            document.getElementById('vp-cred').innerText = vpCredits;
+            document.getElementById('vp-bet').innerText = vpBet;
+            document.getElementById('vp-hand').innerHTML = '';
+            document.getElementById('vp-msg').innerText = "Jacks or Better";
+        }
+        function vpDeal() {
+            if(vpState === 'deal') {
+                if(vpCredits < vpBet) { alert('Insert Coin'); return; }
+                vpCredits -= vpBet; document.getElementById('vp-cred').innerText=vpCredits;
+                vpDeck = createDeck();
+                vpHand = []; for(let i=0;i<5;i++) vpHand.push({c:vpDeck.pop(), held:false});
+                renderVP();
+                vpState = 'draw';
+                document.getElementById('vp-msg').innerText = "Hold cards then Draw";
+            } else {
+                for(let i=0;i<5;i++) {
+                    if(!vpHand[i].held) vpHand[i].c = vpDeck.pop();
+                    vpHand[i].held = false; // reset hold
+                }
+                renderVP();
+                let win = checkVPWin();
+                if(win > 0) {
+                    let amt = win * vpBet;
+                    vpCredits += amt;
+                    document.getElementById('vp-msg').innerText = `WIN: ${amt}`;
+                    playTone(400,0.1); setTimeout(()=>playTone(600,0.1),100);
+                } else {
+                    document.getElementById('vp-msg').innerText = "Game Over";
+                }
+                document.getElementById('vp-cred').innerText=vpCredits;
+                vpState = 'deal';
+            }
+        }
+        function renderVP() {
+            const h = document.getElementById('vp-hand'); h.innerHTML='';
+            vpHand.forEach((cardObj, i) => {
+                const d = document.createElement('div');
+                d.className = 'card' + (['♥','♦'].includes(cardObj.c.s) ? ' suit-red' : '');
+                if(cardObj.held) d.style.border = '3px solid black';
+                d.innerText = cardObj.c.r + cardObj.c.s;
+                d.onclick = () => { 
+                    if(vpState==='draw') { 
+                        cardObj.held = !cardObj.held; 
+                        renderVP(); 
+                    } 
+                };
+                h.appendChild(d);
+            });
+        }
+        function createDeck() {
+            let d = [];
+            const suits = ['♠','♥','♦','♣'];
+            const ranks = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+            for(let s of suits) for(let r of ranks) d.push({r,s});
+            return d.sort(() => Math.random() - 0.5);
+        }
+        function checkVPWin() {
+            // Simplified "Jacks or Better"
+            let counts = {};
+            vpHand.forEach(h => counts[h.c.r] = (counts[h.c.r]||0)+1);
+            let pairs = 0, three=0, four=0;
+            for(let r in counts) {
+                if(counts[r]==2) {
+                     if(['J','Q','K','A'].includes(r)) pairs++; 
+                }
+                if(counts[r]==3) three++;
+                if(counts[r]==4) four++;
+            }
+            if(four) return 25;
+            if(three && pairs) return 9;
+            if(three) return 3;
+            if(pairs>=1) return 1; // Jacks or Better
+            return 0;
+        }
+
+        // --- CODE BREAKER ---
+        let cbSecret=[], cbGuess=[];
+        function initCodeBreaker() {
+            cbSecret = [1,2,3,4].map(() => Math.floor(Math.random()*6)+1);
+            document.getElementById('cb-board').innerHTML = '';
+            alert("Code Set! Guess 4 numbers (1-6)");
+        }
+        function submitGuess() {
+            const g1 = parseInt(document.getElementById('cb-1').value);
+            const g2 = parseInt(document.getElementById('cb-2').value);
+            const g3 = parseInt(document.getElementById('cb-3').value);
+            const g4 = parseInt(document.getElementById('cb-4').value);
+            const guess = [g1,g2,g3,g4];
+            
+            let exact=0, color=0;
+            let tempS = [...cbSecret], tempG = [...guess];
+            
+            // Exact matches
+            for(let i=0; i<4; i++) {
+                if(tempG[i] === tempS[i]) { exact++; tempS[i]=null; tempG[i]=-1; }
+            }
+            // Color matches
+            for(let i=0; i<4; i++) {
+                if(tempG[i] === -1) continue;
+                let idx = tempS.indexOf(tempG[i]);
+                if(idx !== -1) { color++; tempS[idx]=null; }
+            }
+            
+            const row = document.createElement('div');
+            row.innerText = `${g1}${g2}${g3}${g4} -> ⚫${exact} ⚪${color}`;
+            document.getElementById('cb-board').appendChild(row);
+            
+            if(exact === 4) { alert("YOU WIN!"); initCodeBreaker(); }
+        }
+
+        // --- DAY FINDER ---
+        function findDay() {
+            const val = document.getElementById('df-input').value;
+            if(!val) return;
+            const d = new Date(val);
+            const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+            document.getElementById('df-res').innerText = days[d.getDay()]; 
+        }
+
+        // --- QUOTES ---
+        const quotesList = [
+            {q:"The computer for the rest of us.", a:"Apple"},
+            {q:"Stay hungry, stay foolish.", a:"Jobs"},
+            {q:"Simplicity is the ultimate sophistication.", a:"da Vinci"},
+            {q:"It just works.", a:"Jobs"},
+            {q:"Information is not knowledge.", a:"Einstein"}
+        ];
+        function initQuotes() { nextQuote(); }
+        function nextQuote() {
+            const r = quotesList[Math.floor(Math.random() * quotesList.length)];
+            document.getElementById('quote-text').innerText = `"${r.q}"`;
+            document.getElementById('quote-author').innerText = `- ${r.a}`;
+        }
+
+        // --- MORSE APP ---
+        const morseMap = {
+            'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.',
+            'G': '--.', 'H': '....', 'I': '..', 'J': '.---', 'K': '-.-', 'L': '.-..',
+            'M': '--', 'N': '-.', 'O': '---', 'P': '.--.', 'Q': '--.-', 'R': '.-.',
+            'S': '...', 'T': '-', 'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-',
+            'Y': '-.--', 'Z': '--..', '1': '.----', '2': '..---', '3': '...--',
+            '4': '....-', '5': '.....', '6': '-....', '7': '--...', '8': '---..',
+            '9': '----.', '0': '-----', ' ': ' '
+        };
+        function transMorse() {
+            const txt = document.getElementById('morse-input').value.toUpperCase();
+            const code = txt.split('').map(c => morseMap[c] || '').join(' ');
+            document.getElementById('morse-output').innerText = code;
+        }
+        function playMorse() {
+            const code = document.getElementById('morse-output').innerText;
+            let t = 0;
+            for(let c of code) {
+                if(c === '.') { setTimeout(()=>playTone(600, 0.1), t); t += 200; }
+                else if(c === '-') { setTimeout(()=>playTone(600, 0.3), t); t += 400; }
+                else t += 200; // Space
+            }
+        }
+
+        // --- METRONOME APP ---
+        let metroInt, metroBpm=100;
+        function updateMetroUI() {
+            metroBpm = document.getElementById('bpm-slider').value;
+            document.getElementById('bpm-disp').innerText = metroBpm;
+            if(metroInt) { clearInterval(metroInt); metroInt = setInterval(() => playTone(800, 0.05), 60000/metroBpm); }
+        }
+        function toggleMetronome() {
+            if(metroInt) { clearInterval(metroInt); metroInt=null; document.getElementById('metro-btn').innerText = 'Start'; }
+            else { metroInt = setInterval(() => playTone(800, 0.05), 60000/metroBpm); document.getElementById('metro-btn').innerText = 'Stop'; }
+        }
+        
+        // --- PATTERN MAKER ---
+        let patGrid = Array(8).fill().map(() => Array(8).fill(0));
+        function initPattern() {
+            const g = document.getElementById('pat-grid'); g.innerHTML = '';
+            for(let y=0; y<8; y++) for(let x=0; x<8; x++) {
+                const d = document.createElement('div');
+                d.className = 'pat-cell';
+                d.onclick = () => { d.classList.toggle('filled'); patGrid[y][x] = !patGrid[y][x]; };
+                g.appendChild(d);
+            }
+        }
+        function applyPattern() {
+            // Create canvas 8x8
+            const c = document.createElement('canvas'); c.width=8; c.height=8;
+            const ctx = c.getContext('2d');
+            ctx.fillStyle = 'white'; ctx.fillRect(0,0,8,8);
+            ctx.fillStyle = 'black';
+            for(let y=0; y<8; y++) for(let x=0; x<8; x++) {
+                if(patGrid[y][x]) ctx.fillRect(x,y,1,1);
+            }
+            document.body.style.backgroundImage = `url(${c.toDataURL()})`;
+            document.body.style.backgroundSize = "32px 32px"; // Scale up
+        }
+
+        // --- PASS GEN ---
+        function genPass() {
+            const len = document.getElementById('pg-len').value;
+            const sym = document.getElementById('pg-sym').checked;
+            const num = document.getElementById('pg-num').checked;
+            let chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            if(num) chars += "0123456789";
+            if(sym) chars += "!@#$%^&*()";
+            let pass = "";
+            for(let i=0; i<len; i++) pass += chars.charAt(Math.floor(Math.random() * chars.length));
+            document.getElementById('pg-out').value = pass;
+        }
+        
+        // --- JOKES ---
+        const jokesList = [
+            "Why did the computer go to the doctor? It had a virus.",
+            "I would tell you a UDP joke, but you might not get it.",
+            "There are 10 types of people: those who understand binary, and those who don't.",
+            "Why was the math book sad? It had too many problems.",
+            "What do you call a fake noodle? An Impasta."
+        ];
+        function tellJoke() {
+            const j = jokesList[Math.floor(Math.random() * jokesList.length)];
+            document.getElementById('joke-text').innerText = j;
+        }
+
+        // --- CONNECT 4 ---
+        let c4Board = [], c4Turn = 1; // 1=Black, 2=White(Checkered)
+        function initConnect4() {
+            c4Board = Array(6).fill().map(() => Array(7).fill(0));
+            c4Turn = 1;
+            renderC4();
+        }
+        function renderC4() {
+            const g = document.getElementById('c4-board'); g.innerHTML = '';
+            for(let r=0; r<6; r++) for(let c=0; c<7; c++) {
+                const d = document.createElement('div');
+                d.className = 'c4-cell';
+                if(c4Board[r][c] === 1) d.classList.add('p1');
+                if(c4Board[r][c] === 2) d.classList.add('p2');
+                d.onclick = () => dropC4(c);
+                g.appendChild(d);
+            }
+            document.getElementById('c4-status').innerText = c4Turn === 1 ? "Player 1's Turn" : "Player 2's Turn";
+        }
+        function dropC4(col) {
+            for(let r=5; r>=0; r--) {
+                if(c4Board[r][col] === 0) {
+                    c4Board[r][col] = c4Turn;
+                    if(checkC4Win(r, col)) { 
+                        renderC4(); 
+                        setTimeout(()=>alert(`Player ${c4Turn} Wins!`), 10); 
+                        return; 
+                    }
+                    c4Turn = c4Turn===1?2:1;
+                    renderC4();
+                    return;
+                }
+            }
+        }
+        function checkC4Win(r, c) {
+            const player = c4Board[r][c];
+            // Check directions: horiz, vert, diag1, diag2
+            const dirs = [[0,1], [1,0], [1,1], [1,-1]];
+            for(let d of dirs) {
+                let count = 1;
+                // Check forward
+                for(let i=1; i<4; i++) {
+                    let nr = r + d[0]*i, nc = c + d[1]*i;
+                    if(nr<0||nr>=6||nc<0||nc>=7||c4Board[nr][nc]!==player) break;
+                    count++;
+                }
+                // Check backward
+                for(let i=1; i<4; i++) {
+                    let nr = r - d[0]*i, nc = c - d[1]*i;
+                    if(nr<0||nr>=6||nc<0||nc>=7||c4Board[nr][nc]!==player) break;
+                    count++;
+                }
+                if(count >= 4) return true;
+            }
+            return false;
+        }
+        
+        // --- GLOBAL INPUTS ---
+        document.addEventListener('keydown', e=>{
+            // Tetris
+            if(document.getElementById('blocks').classList.contains('visible') && piece){
+                if(e.key==='ArrowLeft') { if(!collision(-1,0,piece.active)){piece.x--; drawBoard();} }
+                else if(e.key==='ArrowRight') { if(!collision(1,0,piece.active)){piece.x++; drawBoard();} }
+                else if(e.key==='ArrowUp') rotatePiece();
+                else if(e.key==='ArrowDown') dropPiece();
+            }
+            // Snake
+            if(document.getElementById('snake').classList.contains('visible')){
+                if(e.key==='ArrowUp') sQueue.push({x:0,y:-1});
+                if(e.key==='ArrowDown') sQueue.push({x:0,y:1});
+                if(e.key==='ArrowLeft') sQueue.push({x:-1,y:0});
+                if(e.key==='ArrowRight') sQueue.push({x:1,y:0});
+            }
+            // Maze
+            if(document.getElementById('maze').classList.contains('visible') && mPlayer){
+                let r=mPlayer.r, c=mPlayer.c;
+                if(e.key==='ArrowUp' && !mGrid[r][c].t) mPlayer.r--;
+                if(e.key==='ArrowDown' && !mGrid[r][c].b) mPlayer.r++;
+                if(e.key==='ArrowLeft' && !mGrid[r][c].l) mPlayer.c--;
+                if(e.key==='ArrowRight' && !mGrid[r][c].r) mPlayer.c++;
+                drawMaze();
+                if(mPlayer.r===mEnd.r && mPlayer.c===mEnd.c) alert("Solved!");
+            }
+        });
+
+        // INIT
+        window.addEventListener('DOMContentLoaded', () => {
+             // Init Paint Context early to prevent null errors
+             paintC=document.getElementById('paintCanvas');
+             if(paintC) {
+                 pCtxMain=paintC.getContext('2d');
+                 paintC.addEventListener('mousedown', (e)=>{
+                     painting=true; pCtxMain.beginPath(); // Start path for smooth lines
+                     pCtxMain.moveTo(e.offsetX, e.offsetY);
+                     drawPaint(e);
+                 }); 
+                 paintC.addEventListener('mouseup', ()=>painting=false); 
+                 paintC.addEventListener('mousemove', drawPaint);
+             }
+        });
+    </script>
+</body>
+</html>
